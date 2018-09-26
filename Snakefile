@@ -48,4 +48,54 @@ rule all:
 	expand("Sam/{sample}.sam", sample = baseName),
 	expand("Bam/{sample}.bam", sample = baseName),
 	expand("Bed/{sample}_{size}.bed", sample = baseName, size = {"allFrags", "20to120", "150to170"}),
-	expand("Bam/{sample}.bam", sample = baseName),
+	expand("Peaks/{sample}_{size}_peaks.narrowPeak", sample = baseName, size = {"allFrags", "20to120", "150to170"}),
+	expand("BigWigz/{sample}_{size}.bw", sample = baseName, size = {"allFrags", "20to120", "150to170"})
+
+rule align_ref:
+	input:
+		r1 = "{sample}_R1.fastq.gz",
+		r2 = "{sample}_R2.fastq.gz"
+	output:
+		sam = "{sample}.sam",
+		logInfo = "logs/{sample}_bowtie2.txt"
+
+	threads: 8
+	params:
+		refgenome = REFGENOMEPATH,
+		module = bowtie2Ver
+	shell:
+		"""
+		module purge && module load {params.module}
+		bowtie2 --seed 123 -p {threads} -q --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700 -x {params.refgenome} -1 {input.readOne} -2 {input.readTwo} -S {output.sam} 2> {output.logInfo}
+		"""
+
+rule bamsort:
+	input:
+		bam = "{sample}.bam"
+	output:
+		bam = "Bam/{sample}_{REFGENOME}_sorted.bam",
+		idx = "Bam/{sample}_{REFGENOME}_sorted.bam.bai"
+	threads: 4
+	params: 
+		module = samtoolsVer
+	shell:
+		"""
+		module purge && module load {params.module}
+		samtools sort -@ {threads} -o {output.bam} {input} &&
+		samtools index {output.bam}
+		"""
+# TODO:
+# -- Continue here
+#rule bamFilter:
+#	input:
+#		bam = "Bam/{sample}_{REFGENOME}_sorted.bam",
+#		idx = "Bam/{sample}_{REFGENOME}_sorted.bam.bai"
+#	output:
+#		bam = "Bam/{sample}_{REFGENOME}_sorted_noYUHet.bam",
+#		idx = "Bam/{sample}_{REFGENOME}_sorted_noYUHet.bam.bai"
+#	params: module = samtoolsVer
+#	threads: 4
+#	shell: 
+#		"""
+#		module purge && module load {params.module}
+#		"""
