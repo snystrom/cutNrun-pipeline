@@ -1,5 +1,5 @@
-import re
-import os
+import re, os, sys
+import pandas as pd
 
 ##############################
 # Module Versions:
@@ -43,6 +43,10 @@ sampleList = extract_group(fqs, "rep", fastq_regex)
 groupList  = extract_group(fqs, "id", fastq_regex)
 
 baseName = fqs.split(".")[0]
+
+sampleSheet = pd.read_table("ss.tsv", delimiter = "\t")
+
+ss['sample_output'] = ss.[['sample', 'rep']].apply(lambda x : "{}-{}".format(*x), axis = 1)
 
 rule all:
 	expand("Sam/{sample}.sam", sample = baseName),
