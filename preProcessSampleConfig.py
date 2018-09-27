@@ -43,23 +43,23 @@ def makeSampleSheets(path, idcols, delim):
     return(df, pool_df)
 
 
-def main(path, idcols, delim):
-    makeSampleSheets(path, idcols, delim)
-    sampleSheet, poolSampleSheet = main(path, idcols, '-')
+def main(path, idcols, delim = '-'):
+    sampleSheet, poolSampleSheet = makeSampleSheets(path, idcols, delim)
     
     out = {"sampleSheet": sampleSheet, "poolSampleSheet": poolSampleSheet}
     
     for df, name in zip(out.values(), out.keys()):
         filename = name + ".tsv"
         df.to_csv(filename, sep = "\t", index = False)
-    pass
+    
 
-# Drop call from argv
-sys.argv.pop(0)
-# Path to configFile is first argument
-path = sys.argv.pop(0)
-# TODO: check that path exists ?
-# Remaining function calls are the id variables for the basename
-idcols = sys.argv
+if __name__ == "__main__":
+    # Drop call from argv
+    sys.argv.pop(0)
+    # Path to configFile is first argument
+    path = sys.argv.pop(0)
+    # TODO: check that path exists ?
+    # Remaining function calls are the id variables for the basename
+    idcols = sys.argv
 
-main(path, idcols, '-')
+    main(path, idcols, '-')
