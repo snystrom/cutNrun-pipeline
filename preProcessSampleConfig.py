@@ -18,13 +18,13 @@ def baseNameFormat(df, cols, delim = "-"):
     baseNameFormat = delim.join(["{}" for c in cols])
     return(baseNameFormat)
 
-def baseNameFromCols(df, cols, formatString, outputColName = "basename"):
+def baseNameFromCols(df, cols, formatString, outputColName = "baseName"):
     # Appends basename column to dataframe
     # Input:
     df[outputColName] = df[cols].apply(lambda x : formatString.format(*x), axis = 1)
     return(df)
 
-def addBaseName(df, cols, delim = "-", outputColName = "basename"):
+def addBaseName(df, cols, delim = "-", outputColName = "baseName"):
     # Takes sampleSheet & list of columns as input, 
     # returns sampleSheet with 'basename' column appended
     formatString = baseNameFormat(df, cols, delim)
