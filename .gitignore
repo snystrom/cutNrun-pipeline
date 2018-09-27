@@ -1,2 +1,4 @@
 *.fastq.gz
 *.swp
+.snakemake/
+__pycache__/

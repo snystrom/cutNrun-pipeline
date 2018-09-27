@@ -34,11 +34,11 @@ def addBaseName(df, cols, delim = "-", outputColName = "baseName"):
 #def addExt(df, ext, baseNameCol = 'basename'):
 #    # input sampleSheet, return extension of file
 
-def makeSampleSheets(path, idcols, delim):
+def makeSampleSheets(path, idcols, delim, baseNameColumn = "baseName"):
     df = pd.read_table(path, delimiter = "\t")
     df = addBaseName(df, idcols, delim)
     keep_cols = idcols.copy()
-    keep_cols.append('basename')
+    keep_cols.append(baseNameColumn)
     pool_df = df[keep_cols].drop_duplicates()
     return(df, pool_df)
 
