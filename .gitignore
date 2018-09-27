@@ -2,6 +2,6 @@
 *.swp
 .snakemake/
 __pycache__/
-poolSampleSheet.tsv 
-sampleSheet.tsv 
 ss.tsv
+poolSampleSheet.tsv
+sampleSheet.tsv
