@@ -1,5 +1,5 @@
 # CUT&RUN Pipeline
-## Author: Spencer Nystrom
+## Author: Spencer Nystrom, Chris Uyehara
 
 ### Instructions:
 Edit `basename_cols` in Snakefile to create & rename fastq files into sensible format
