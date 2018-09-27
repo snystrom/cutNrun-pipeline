@@ -34,31 +34,32 @@ def addBaseName(df, cols, delim = "-", outputColName = "basename"):
 #def addExt(df, ext, baseNameCol = 'basename'):
 #    # input sampleSheet, return extension of file
 
-
-def main(path, idcols, delim):
+def makeSampleSheets(path, idcols, delim):
     df = pd.read_table(path, delimiter = "\t")
     df = addBaseName(df, idcols, delim)
-    #return(df, pool_df)
     keep_cols = idcols.copy()
     keep_cols.append('basename')
     pool_df = df[keep_cols].drop_duplicates()
-    
     return(df, pool_df)
+
+
+def main(path, idcols, delim):
+    makeSampleSheets(path, idcols, delim)
+    sampleSheet, poolSampleSheet = main(path, idcols, '-')
+    
+    out = {"sampleSheet": sampleSheet, "poolSampleSheet": poolSampleSheet}
+    
+    for df, name in zip(out.values(), out.keys()):
+        filename = name + ".tsv"
+        df.to_csv(filename, sep = "\t", index = False)
+    pass
 
 # Drop call from argv
 sys.argv.pop(0)
-
 # Path to configFile is first argument
 path = sys.argv.pop(0)
 # TODO: check that path exists ?
-
 # Remaining function calls are the id variables for the basename
 idcols = sys.argv
 
-sampleSheet, poolSampleSheet = main(path, idcols, '-')
-
-out = {"sampleSheet": sampleSheet, "poolSampleSheet": poolSampleSheet}
-
-for df, name in zip(out.values(), out.keys()):
-    filename = name + ".tsv"
-    df.to_csv(filename, sep = "\t", index = False)
+main(path, idcols, '-')
