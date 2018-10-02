@@ -17,7 +17,7 @@ rVer = str('r/3.3.1')
 
 python3Ver = str('python/3.5.1')
 
-bbmapVer = str('bbmap/37.50')
+bbmapVer = str('bbmap/38.22')
 
 ##############################
 
