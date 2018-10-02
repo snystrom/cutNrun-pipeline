@@ -28,9 +28,13 @@ pool_basename_columns = ['sample']
 # http://metagenomic-methods-for-microbial-ecottttttt.readthedocs.io/en/latest/day-1/
 REFGENOMEPATH = '/proj/mckaylab/genomeFiles/dm3/RefGenome/dm3'
 SPIKEGENOMEPATH = '/proj/seq/data/sacCer3_UCSC/Sequence/Bowtie2Index/genome'
+controlDNAPath = '/proj/mckaylab/genomeFiles/dm3/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'
 
 REFGENOME = 'dm3'
 SPIKEGENOME = 'sacCer3'
+
+genomeSize = '121400000'
+readLen = '75'
 
 chromSize_Path = '/proj/mckaylab/genomeFiles/dm3/dm3.chrom.sizes'
 
@@ -66,17 +70,14 @@ def move_fastq(read1, read2, baseNames):
 # -- change fastq_r1 and fastq_r2 to NEW filename in sampleSheet
 move_fastq(sampleSheet.fastq_r1, sampleSheet.fastq_r2, sampleSheet.baseName)
 
+
 rule all:
 	input:
 		expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1','2']),
 		expand("Sam/{sample}_{species}_trim.sam", sample = sampleSheet.baseName, species = speciesList),
-		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved_noYUHet.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, ftype = {"bam", "bam.bai"}),
-		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_noYUHet_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
-		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_noYUHet_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes)
-		#expand("Bam/{sample}.bam", sample = sampleSheet.baseName.unique()),
-		#expand("Bed/{sample}_{size}.bed", sample = sampleSheet.baseName, size = {"allFrags", "20to120", "150to170"}),
-		#expand("Peaks/{sample}_{size}_peaks.narrowPeak", sample = sampleSheet.baseName, size = {"allFrags", "20to120", "150to170"}),
-		#expand("BigWigz/{sample}_{size}.bw", sample = sampleSheet.baseName, size = {"allFrags", "20to120", "150to170"})
+		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
+		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
+		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes)
 
 
 rule trim_adapter:
@@ -93,7 +94,7 @@ rule trim_adapter:
 	shell:
 		"""
 		module purge && module load {params.module}
-		bbduk.sh in1={input.readOne} in2={input.readTwo} out1={output.readOne} out2={output.readTwo} stats={output.adapterStats} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11 > {output.trimStats}
+		bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} stats={output.adapterStats} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11 > {output.trimStats}
 		"""
 
 rule align:
@@ -110,7 +111,7 @@ rule align:
 	shell:
 		"""
 		module purge && module load {params.module}
-		bowtie2 --seed 123 -p {threads} -q --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700 -x {params.refgenome} -1 {input.readOne} -2 {input.readTwo} -S {output.sam} 2> {output.logInfo}
+		bowtie2 --seed 123 -p {threads} -q --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700 -x {params.refgenome} -1 {input.r1} -2 {input.r2} -S {output.sam} 2> {output.logInfo}
 		"""
 
 rule convertToBam:
@@ -168,32 +169,172 @@ rule removeDups:
 		"""
 		module purge && module load {params.module}
 		samtools view -@ 4 -bF 0x400 {input} > {output.bam} 
-		samtools index {output.bam}
+		samtools index {output.index}
 		"""
 
 rule sortBam:
 	input:
 		'Bam/{sample}_{species}_trim_q5_dupsRemoved.bam'
 	output:
-		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam'
+		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam',
+		idx = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam.bai'
 	params:
 		module = samtoolsVer
 	threads: 4
 	shell:
 		"""
 		module purge && module load {params.module}
-		samtools sort -@ {threads} -o {output} {input}
+		samtools sort -@ {threads} -o {output.bam} {input}
+		samtools index {output.bam}	
 		"""
 
-rule indexSortedBam:
+#rule indexSortedBam:
+#	input:
+#		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam'
+#	output:
+#		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam.bai'
+#	params:
+#		module = samtoolsVer
+#	shell:
+#		"""
+#		module purge && module load {params.module}
+#		samtools index {input}	
+#		"""
+
+rule nameSortBam:
 	input:
 		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam'
 	output:
-		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam.bai'
+		temp('Bam/{sample}_{species}_trim_q5_dupsRemoved_nameSorted.bam')
 	params:
 		module = samtoolsVer
 	shell:
 		"""
 		module purge && module load {params.module}
-		samtools index {input}	
+		samtools sort -n {input} -o {output}
 		"""
+
+rule convertBamToBed:
+	input:
+		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_nameSorted.bam',
+	output:
+		'Bed/{sample}_{species}_trim_q5_dupsRemoved.bed'
+	params:
+		module = bedtoolsVer
+	shell:
+		"""
+		module purge && module load {params.module}
+		bedtools bamtobed -bedpe -i {input.bam} | sort -k 1,1 -k 2,2n > {output}		
+		"""
+
+rule splitFragments:
+	input:
+		'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved.bed'
+	output:
+		allFrags = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags.bed',
+		smallFrags = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_20to120.bed',
+		bigFrags = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_150to700.bed'
+	shell:
+		"""
+		cut -f 1,2,6,7 {input} | awk -F '\t' '{{print $0, ($3-$2)}}' - > {output.allFrags}
+		awk -v OFS='\t' '($5>20) && ($5<120) {{print $0}}' {output.allFrags} > {output.smallFrags}
+		awk -v OFS='\t' '($5>150) && ($5<700) {{print $0}}' {output.allFrags} > {output.bigFrags}
+		"""
+
+rule makeFragmentBedGraphs:
+	input:
+		ref   = lambda wildcards : 'Bed/' + wildcards.sample + '_' + REFGENOME + '_trim_q5_dupsRemoved_' + wildcards.fragType + '.bed',
+		spike = lambda wildcards : 'Bed/' + wildcards.sample + '_' + SPIKEGENOME + '_trim_q5_dupsRemoved_' + wildcards.fragType + '.bed'
+	output:
+		unNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg'),
+		spikeNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_spikeNorm.bg'),
+		rpgcNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bg')
+	params:
+		genomeSize = genomeSize,
+		chromSize_Path = chromSize_Path,
+		sampleName = '{sample}',
+		module = bedtoolsVer,
+		readLen = readLen
+	shell:
+		"""
+		module purge && module load {params.module}
+		spikeCount=$(samtools view -c {input.spike})
+		readCount=$(wc -l {input.ref} | sed -e 's/^  *//' -e 's/  */,/g' | cut -d , -f 1)
+		spikeScale=$(echo "scale=5; 10000/${{spikeCount}}/" | bc)
+		rpgcScale=$(echo "scale=5; {params.genomeSize}/(${{readCount}} * {params.readLen})" | bc)
+		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} > {output.unNorm}
+		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} -scale ${{spikeCount}} > {output.spikeNorm}
+		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} -scale ${{rpgcScale}} > {output.rpgcNorm}
+		"""
+
+rule convertToBigWig:
+	input:
+		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}.bg'
+	output:
+		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}.bw'
+	params:
+		module = ucscVer,
+		chromSize_Path = chromSize_Path
+	shell:
+		"""
+		module purge && module load {params.module}
+		wigToBigWig {input} {params.chromSize_Path} {output}
+		"""
+
+#rule zNormBigWig:
+#	input:
+#		'BigWig/{sample}_dm_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bw'
+#	output:
+#		zNorm = 'BigWig/{sample}_dm_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
+#		zStats = 'Logs/{sample}_dm_trim_q5_dupsRemoved_{fragType}.zNorm'
+#	params:
+#		module = rVer,
+#		srcDirectory = srcDirectory
+#	shell:
+#		"""
+#		module purge && module load {params.module}
+#		Rscript --vanilla {params.srcDirectory}/zNorm.r {input} {output.zNorm} > {output.zStats}
+#		"""
+
+rule callPeaks:
+	input:
+		'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bed'
+	output:
+		'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
+	params:
+		module = macsVer,
+		control = controlDNAPath,
+		prefix = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}'
+	shell:
+		"""
+		module purge && module load {params.module}
+		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123 --extsize 125
+		"""
+
+#rule qcReport:
+#	input:
+#		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = ['bam', 'bai'])
+#	output:
+#		"multiqc_report.html"
+#	params: moduleVer = python3Ver
+#	shell:
+#		"""
+#		module purge && module load {params.moduleVer}
+#		multiqc . -f -x *.out -x *.err 
+#		"""
+
+
+#rule makeFragmentSizePlots:
+#	input:
+#		bed = 'Bed/{sample}_dm_trim_q5_dupsRemoved_{fragType}.bed',
+#		peaks = 'Peaks/{sample}_dm_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
+#	output:
+#		'Plots/{sample}_dm_trim_q5_{fragType}_cumulativeDistPlot.png'
+#	params:
+#		module = rVer,
+#		srcDirectory = srcDirectory
+#	shell:
+#		"""
+#		module purge && module load {params.module}
+#		Rscript --vanilla {params.srcDirectory}/makeFragmentSizePlots.R {input.bed} {input.peaks} Plots/
+#		"""
