@@ -17,7 +17,11 @@ sample3	rep1	SLN02_3-Geno-Time-Assay-Condition-Rep1_TAATA_L001_R1_001.fastq.gz	S
 sample3	rep2	SLN02_3-Geno-Time-Assay-Condition-Rep2_TAATA_L001_R1_001.fastq.gz	SLN02_3-Geno-Time-Assay-Condition-Rep2_TAATA_L001_R2_001.fastq.gz
 ```
 
+Run `preProcessSampleConfig.py ss.tsv sample rep`
+
+
 ### TODO:
  - add step that merges techincal replicate fastq files from config
  - find better solution to copying fastq files & merging them
- - test on real data
+ - use config file to pass `basename_cols`, etc. Read in preProcess & Snakefile
+
