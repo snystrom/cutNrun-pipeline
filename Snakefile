@@ -23,10 +23,10 @@ bbmapVer = str('bbmap/38.22')
 ##############################
 
 file_info_path = "ss.tsv"
-basename_columns = ['sample','time','rep']
-pool_basename_columns = ['sample', 'time']
+basename_columns = ['sample','rep']
+pool_basename_columns = ['sample']
 
-# http://metagenomic-methods-for-microbial-ecottttttt.readthedocs.io/en/latest/day-1/
+# https://metagenomic-methods-for-microbial-ecologists.readthedocs.io/en/latest/day-1/
 REFGENOMEPATH = '/proj/mckaylab/genomeFiles/dm3/RefGenome/dm3'
 SPIKEGENOMEPATH = '/proj/seq/data/sacCer3_UCSC/Sequence/Bowtie2Index/genome'
 controlDNAPath = '/proj/mckaylab/genomeFiles/dm3/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'
@@ -46,8 +46,25 @@ normTypeList = ['', '_spikeNorm', '_rpgcNorm']
 
 sampleSheet, pool_sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
 
-# CONTINUE
-#move_fastq(sampleSheet.fastq_r1, sampleSheet.fastq_r2, sampleSheet.baseName)
+sampleSheet['fastq_trim_r1'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1'])
+sampleSheet['fastq_trim_r2'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['2'])
+sampleSheet['bam']           = expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, ftype = {"bam"})
+
+for frag, norm in zip(fragTypes, normTypeList):
+	# Add column per bigwig
+	bw_colName = 'bigwig_{frag}{norm}'.format(frag = frag, norm = norm)
+	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.bw", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag, normType = norm) 
+
+	# Add column per peak call list
+	peak_colName = 'peak_{frag}'.format(frag = frag)
+	sampleSheet[peak_colName] = expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
+
+sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
+
+
+####
+# BEGIN PIPELINE:
+####
 
 rule all:
 	input:
