@@ -1,5 +1,5 @@
-import re, os, sys, shutil
 import pandas as pd
+import subprocess
 import preProcessSampleConfig as pre
 
 ##############################
@@ -22,7 +22,7 @@ bbmapVer = str('bbmap/38.22')
 ##############################
 
 file_info_path = "ss.tsv"
-basename_columns = ['sample', 'rep']
+basename_columns = ['sample','rep']
 pool_basename_columns = ['sample']
 
 # http://metagenomic-methods-for-microbial-ecottttttt.readthedocs.io/en/latest/day-1/
@@ -45,31 +45,8 @@ normTypeList = ['', '_spikeNorm', '_rpgcNorm']
 
 sampleSheet, pool_sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
 
-# rename fastq read1 and read2 files to basename_R1.fq.gz basename_R2.fq.gz
-def move_fastq(read1, read2, baseNames):
-	# vectorized rename
-	# requires .fastq.gz type
-	# TODO: make generic & use input type as output type
-	fastq_dir = 'Fastq/'
-
-	if os.path.exists(fastq_dir):
-		#os.rmdir(fastq_dir)
-		shutil.rmtree(fastq_dir)
-
-	os.mkdir(fastq_dir)
-
-	for r1, r2, baseName in zip(read1, read2, baseNames):
-		#os.symlink(r1, fastq_dir + baseName + "_R1.fastq.gz")
-		#os.symlink(r2, fastq_dir + baseName + "_R2.fastq.gz")
-		shutil.copyfile(r1, fastq_dir + baseName + "_R1.fastq.gz")
-		shutil.copyfile(r2, fastq_dir + baseName + "_R2.fastq.gz")
-
-## TODO:
-# Make better solution to this:
-# -- add column to sampleSheet with old fastq names so they can be un-renamed,
-# -- change fastq_r1 and fastq_r2 to NEW filename in sampleSheet
-move_fastq(sampleSheet.fastq_r1, sampleSheet.fastq_r2, sampleSheet.baseName)
-
+# CONTINUE
+#move_fastq(sampleSheet.fastq_r1, sampleSheet.fastq_r2, sampleSheet.baseName)
 
 rule all:
 	input:
@@ -79,14 +56,14 @@ rule all:
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes)
 
-
 rule trim_adapter:
 	input:
 		r1 = "Fastq/{sample}_R1.fastq.gz",
 		r2 = "Fastq/{sample}_R2.fastq.gz"
 	output:
 		r1 = "Fastq/{sample}_R1_trim.fastq.gz",
-		r2 = "Fastq/{sample}_R2_trim.fastq.gz",
+		r2 = "Fastq/{sample}_R2_trim.fastq.gz"
+	log:
 		adapterStats = 'Logs/{sample}_adapterStats',
 		trimStats = 'Logs/{sample}_trimStats'
 	params:
@@ -94,8 +71,9 @@ rule trim_adapter:
 	shell:
 		"""
 		module purge && module load {params.module}
-		bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} stats={output.adapterStats} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11 > {output.trimStats}
+		bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11 stats={log.adapterStats} > {log.trimStats}
 		"""
+		#bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11
 
 rule align:
 	input:
@@ -103,7 +81,7 @@ rule align:
 		r2 = "Fastq/{sample}_R2_trim.fastq.gz"
 	output:
 		sam = "Sam/{sample}_{species}_trim.sam",
-		logInfo = "logs/{sample}_{species}_bowtie2.txt"
+		logInfo = "Logs/{sample}_{species}_bowtie2.txt"
 	threads: 8
 	params:
 		refgenome = lambda wildcards: indexDict[wildcards.species],
@@ -148,12 +126,12 @@ rule markDups:
 		markedDups = temp('Bam/{sample}_{species}_trim_q5_dupsMarked.bam'),
 		PCRdups = "PCRdups/{sample}_{species}_trim_PCR_duplicates"
 	params:
-		module = picardVer,
+		module = str('picard/' + picardVer),
 		picardPath = picardPath
 	shell:
 		"""
 		module purge && module load {params.module}
-		java -Xmx8g -jar {params.picardPath} SortSam INPUT= {input} OUTPUT= {output.sorted} SORT_ORDER=coordinate
+		java -Xmx8g -jar {params.picardPath} SortSam INPUT= {input} OUTPUT= {output.sorted} SORT_ORDER=coordinate &&
 		java -Xmx8g -jar {params.picardPath} MarkDuplicates INPUT= {output.sorted} OUTPUT= {output.markedDups} METRICS_FILE= {output.PCRdups} REMOVE_DUPLICATES= false ASSUME_SORTED= true
 		"""
 
@@ -168,8 +146,8 @@ rule removeDups:
 	shell:
 		"""
 		module purge && module load {params.module}
-		samtools view -@ 4 -bF 0x400 {input} > {output.bam} 
-		samtools index {output.index}
+		samtools view -@ 4 -bF 0x400 {input} > {output.bam} &&
+		samtools index {output.bam} {output.index}
 		"""
 
 rule sortBam:
