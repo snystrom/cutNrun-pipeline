@@ -24,4 +24,5 @@ Run `preProcessSampleConfig.py ss.tsv sample rep`
  - add step that merges techincal replicate fastq files from config
  - find better solution to copying fastq files & merging them
  - use config file to pass `basename_cols`, etc. Read in preProcess & Snakefile
+ - add rules to create POOLED data
 
