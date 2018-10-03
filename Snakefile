@@ -1,3 +1,4 @@
+from stat import *
 import pandas as pd
 import subprocess
 import preProcessSampleConfig as pre
@@ -22,8 +23,8 @@ bbmapVer = str('bbmap/38.22')
 ##############################
 
 file_info_path = "ss.tsv"
-basename_columns = ['sample','rep']
-pool_basename_columns = ['sample']
+basename_columns = ['sample','time','rep']
+pool_basename_columns = ['sample', 'time']
 
 # http://metagenomic-methods-for-microbial-ecottttttt.readthedocs.io/en/latest/day-1/
 REFGENOMEPATH = '/proj/mckaylab/genomeFiles/dm3/RefGenome/dm3'
@@ -222,7 +223,7 @@ rule splitFragments:
 rule makeFragmentBedGraphs:
 	input:
 		ref   = lambda wildcards : 'Bed/' + wildcards.sample + '_' + REFGENOME + '_trim_q5_dupsRemoved_' + wildcards.fragType + '.bed',
-		spike = lambda wildcards : 'Bed/' + wildcards.sample + '_' + SPIKEGENOME + '_trim_q5_dupsRemoved_' + wildcards.fragType + '.bed'
+		spike = lambda wildcards : 'Bam/' + wildcards.sample + '_' + SPIKEGENOME + '_trim_q5_dupsRemoved.bam' 
 	output:
 		unNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg'),
 		spikeNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_spikeNorm.bg'),
@@ -236,10 +237,13 @@ rule makeFragmentBedGraphs:
 	shell:
 		"""
 		module purge && module load {params.module}
+		
+		# Count reads in spike-in & inputs for normalization
 		spikeCount=$(samtools view -c {input.spike})
 		readCount=$(wc -l {input.ref} | sed -e 's/^  *//' -e 's/  */,/g' | cut -d , -f 1)
 		spikeScale=$(echo "scale=5; 10000/${{spikeCount}}/" | bc)
 		rpgcScale=$(echo "scale=5; {params.genomeSize}/(${{readCount}} * {params.readLen})" | bc)
+
 		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} > {output.unNorm}
 		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} -scale ${{spikeCount}} > {output.spikeNorm}
 		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} -scale ${{rpgcScale}} > {output.rpgcNorm}
