@@ -64,7 +64,7 @@ for frag, norm in zip(fragTypes, normTypeList):
 	sampleSheet[peak_colName] = expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
 	
 	bed_colName = 'bed_{frag}'.format(frag = frag)
-	sampleSheet[bed_colName] = expand('Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
+	sampleSheet[bed_colName] = expand('Bed/{sample}_{species}_trim_q5_dupsRemoved_{fragType}.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
 
 sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 
