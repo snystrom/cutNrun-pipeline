@@ -51,6 +51,10 @@ sampleSheet['fastq_trim_r2'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sam
 sampleSheet['bam']           = expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, ftype = {"bam"})
 
 for frag, norm in zip(fragTypes, normTypeList):
+	# Add column per bedgraph
+	bg_colName = 'bedgraph_{frag}{norm}'.format(frag = frag, norm = norm)
+	sampleSheet[bg_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.bg", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag, normType = norm) 
+
 	# Add column per bigwig
 	bw_colName = 'bigwig_{frag}{norm}'.format(frag = frag, norm = norm)
 	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.bw", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag, normType = norm) 
@@ -58,6 +62,9 @@ for frag, norm in zip(fragTypes, normTypeList):
 	# Add column per peak call list
 	peak_colName = 'peak_{frag}'.format(frag = frag)
 	sampleSheet[peak_colName] = expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
+	
+	bed_colName = 'bed_{frag}'.format(frag = frag)
+	sampleSheet[bed_colName] = expand('Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
 
 sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 
@@ -242,9 +249,12 @@ rule makeFragmentBedGraphs:
 		ref   = lambda wildcards : 'Bed/' + wildcards.sample + '_' + REFGENOME + '_trim_q5_dupsRemoved_' + wildcards.fragType + '.bed',
 		spike = lambda wildcards : 'Bam/' + wildcards.sample + '_' + SPIKEGENOME + '_trim_q5_dupsRemoved.bam' 
 	output:
-		unNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg'),
-		spikeNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_spikeNorm.bg'),
-		rpgcNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bg')
+		#unNorm    = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg'),
+		#spikeNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_spikeNorm.bg'),
+		#rpgcNorm  = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bg')
+		unNorm    = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg',
+		spikeNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_spikeNorm.bg',
+		rpgcNorm  = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bg'
 	params:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path,
