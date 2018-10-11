@@ -4,6 +4,26 @@ import subprocess
 import preProcessSampleConfig as pre
 
 ##############################
+# Configure these:
+
+file_info_path = "ss.tsv" 
+basename_columns = ['sample','rep']
+#pool_basename_columns = ['sample']
+
+REFGENOME   = 'dm6'
+SPIKEGENOME = 'sacCer3'
+
+# Set these paths to a directory with the reference genome, spike-in genome, etc.
+REFGENOMEPATH   = '/proj/seq/data/{ref}_UCSC/Sequence/Bowtie2Index/genome'.format(ref = REFGENOME)
+SPIKEGENOMEPATH = '/proj/seq/data/{spike}_UCSC/Sequence/Bowtie2Index/genome'.format(spike = SPIKEGENOME)
+controlDNAPath  = 'ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'
+chromSize_Path  = '{ref}.chrom.sizes'.format(ref = REFGENOME)
+
+# Set effective genome size for REFERENCE genome, and readlength (this should equal the number of reads forward + reverse)
+genomeSize = '121400000'
+readLen = '75'
+
+####################################################################################
 # Module Versions:
 
 bowtie2Ver = str('bowtie2/2.2.8') 
@@ -20,32 +40,17 @@ python3Ver = str('python/3.5.1')
 
 bbmapVer = str('bbmap/38.22')
 
-##############################
-# Configure these:
 
-file_info_path = "ss.tsv" 
-basename_columns = ['sample','rep']
-pool_basename_columns = ['sample']
-
-if os.path.exists(file_info_path) == False:
-	print('Error: {name} does not exist. Be sure to set `file_info_path` in Snakefile.'.format(name = file_info_path))
-
-REFGENOME   = 'dm3'
-SPIKEGENOME = 'sacCer3'
-
-# https://metagenomic-methods-for-microbial-ecologists.readthedocs.io/en/latest/day-1/
-REFGENOMEPATH   = '/proj/mckaylab/genomeFiles/{ref}/RefGenome/{ref}'.format(ref = REFGENOME)
-SPIKEGENOMEPATH = '/proj/seq/data/{spike}_UCSC/Sequence/Bowtie2Index/genome'.format(spike = SPIKEGENOME)
-controlDNAPath  = '/proj/mckaylab/genomeFiles/{ref}/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'.format(ref = REFGENOME)
-chromSize_Path  = '/proj/mckaylab/genomeFiles/{ref}/{ref}.chrom.sizes'.format(ref = REFGENOME)
-
-genomeSize = '121400000'
-readLen = '75'
+####################################################################################
+# Setup:
 
 speciesList  = [REFGENOME, SPIKEGENOME]
 indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
 fragTypes    = ['allFrags', '20to120', '150to700']
 normTypeList = ['', '_spikeNorm', '_rpgcNorm']
+
+if os.path.exists(file_info_path) == False:
+	print('Error: {name} does not exist. Be sure to set `file_info_path` in Snakefile.'.format(name = file_info_path))
 
 sampleSheet, pool_sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
 
