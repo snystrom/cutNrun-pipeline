@@ -79,7 +79,8 @@ rule all:
 		expand("Sam/{sample}_{species}_trim.sam", sample = sampleSheet.baseName, species = speciesList),
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
-		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes)
+		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
+		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes)
 
 rule trim_adapter:
 	input:
@@ -301,6 +302,20 @@ rule convertToBigWig:
 #		module purge && module load {params.module}
 #		Rscript --vanilla {params.srcDirectory}/zNorm.r {input} {output.zNorm} > {output.zStats}
 #		"""
+
+rule callThresholdPeaks:
+	input:
+		spikeNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_spikeNorm.bw'
+	output:
+		'Threshold_PeakCalls/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_thresholdPeaks.bed'
+	params:
+		module = rVer
+	shell:
+		"""
+		module load {params.module}
+		Rscript --vanilla callThresholdPeaks.R {input.spikeNorm} {output}
+		"""
+	
 
 rule callPeaks:
 	input:
