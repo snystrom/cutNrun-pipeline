@@ -21,23 +21,26 @@ python3Ver = str('python/3.5.1')
 bbmapVer = str('bbmap/38.22')
 
 ##############################
+# Configure these:
 
-file_info_path = "ss.tsv"
+file_info_path = "ss.tsv" 
 basename_columns = ['sample','rep']
 pool_basename_columns = ['sample']
 
-# https://metagenomic-methods-for-microbial-ecologists.readthedocs.io/en/latest/day-1/
-REFGENOMEPATH = '/proj/mckaylab/genomeFiles/dm3/RefGenome/dm3'
-SPIKEGENOMEPATH = '/proj/seq/data/sacCer3_UCSC/Sequence/Bowtie2Index/genome'
-controlDNAPath = '/proj/mckaylab/genomeFiles/dm3/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'
+if os.path.exists(file_info_path) == False:
+	print('Error: {name} does not exist. Be sure to set `file_info_path` in Snakefile.'.format(name = file_info_path))
 
-REFGENOME = 'dm3'
+REFGENOME   = 'dm3'
 SPIKEGENOME = 'sacCer3'
+
+# https://metagenomic-methods-for-microbial-ecologists.readthedocs.io/en/latest/day-1/
+REFGENOMEPATH   = '/proj/mckaylab/genomeFiles/{ref}/RefGenome/{ref}'.format(ref = REFGENOME)
+SPIKEGENOMEPATH = '/proj/seq/data/{spike}_UCSC/Sequence/Bowtie2Index/genome'.format(spike = SPIKEGENOME)
+controlDNAPath  = '/proj/mckaylab/genomeFiles/{ref}/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'.format(ref = REFGENOME)
+chromSize_Path  = '/proj/mckaylab/genomeFiles/{ref}/{ref}.chrom.sizes'.format(ref = REFGENOME)
 
 genomeSize = '121400000'
 readLen = '75'
-
-chromSize_Path = '/proj/mckaylab/genomeFiles/dm3/dm3.chrom.sizes'
 
 speciesList  = [REFGENOME, SPIKEGENOME]
 indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
@@ -65,6 +68,10 @@ for frag, norm in zip(fragTypes, normTypeList):
 	
 	bed_colName = 'bed_{frag}'.format(frag = frag)
 	sampleSheet[bed_colName] = expand('Bed/{sample}_{species}_trim_q5_dupsRemoved_{fragType}.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
+
+	# Threshold peakcalls:
+	thresh_colName = 'threshold_peaks_{frag}'.format(frag = frag)
+	sampleSheet[thresh_colName] = expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
 
 sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 
