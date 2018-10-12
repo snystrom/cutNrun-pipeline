@@ -1,7 +1,23 @@
-from stat import *
 import pandas as pd
-import subprocess
 import preProcessSampleConfig as pre
+
+##############################
+# Configure these:
+
+file_info_path = "ss.tsv" 
+basename_columns = ['sample','rep']
+pool_basename_columns = ['sample']
+
+REFGENOME   = 'dm3'
+SPIKEGENOME = 'sacCer3'
+
+REFGENOMEPATH   = '/proj/mckaylab/genomeFiles/{ref}/RefGenome/{ref}'.format(ref = REFGENOME)
+SPIKEGENOMEPATH = '/proj/seq/data/{spike}_UCSC/Sequence/Bowtie2Index/genome'.format(spike = SPIKEGENOME)
+controlDNAPath  = '/proj/mckaylab/genomeFiles/{ref}/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'.format(ref = REFGENOME)
+chromSize_Path  = '/proj/mckaylab/genomeFiles/{ref}/{ref}.chrom.sizes'.format(ref = REFGENOME)
+
+genomeSize = '121400000'
+readLen = '75'
 
 ##############################
 # Module Versions:
@@ -21,33 +37,20 @@ python3Ver = str('python/3.5.1')
 bbmapVer = str('bbmap/38.22')
 
 ##############################
-# Configure these:
-
-file_info_path = "ss.tsv" 
-basename_columns = ['sample','rep']
-pool_basename_columns = ['sample']
-
-if os.path.exists(file_info_path) == False:
-	print('Error: {name} does not exist. Be sure to set `file_info_path` in Snakefile.'.format(name = file_info_path))
-
-REFGENOME   = 'dm3'
-SPIKEGENOME = 'sacCer3'
-
-# https://metagenomic-methods-for-microbial-ecologists.readthedocs.io/en/latest/day-1/
-REFGENOMEPATH   = '/proj/mckaylab/genomeFiles/{ref}/RefGenome/{ref}'.format(ref = REFGENOME)
-SPIKEGENOMEPATH = '/proj/seq/data/{spike}_UCSC/Sequence/Bowtie2Index/genome'.format(spike = SPIKEGENOME)
-controlDNAPath  = '/proj/mckaylab/genomeFiles/{ref}/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'.format(ref = REFGENOME)
-chromSize_Path  = '/proj/mckaylab/genomeFiles/{ref}/{ref}.chrom.sizes'.format(ref = REFGENOME)
-
-genomeSize = '121400000'
-readLen = '75'
+# Setup:
 
 speciesList  = [REFGENOME, SPIKEGENOME]
 indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
 fragTypes    = ['allFrags', '20to120', '150to700']
 normTypeList = ['', '_spikeNorm', '_rpgcNorm']
 
+if os.path.exists(file_info_path) == False:
+	print('Error: {name} does not exist. Be sure to set `file_info_path` in Snakefile.'.format(name = file_info_path))
+
 sampleSheet, pool_sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
+
+####
+# SampleSheet Setup:
 
 sampleSheet['fastq_trim_r1'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1'])
 sampleSheet['fastq_trim_r2'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['2'])
@@ -75,19 +78,26 @@ for frag, norm in zip(fragTypes, normTypeList):
 
 sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 
+####
+# Pooled SampleSheet Setup:
+
+#"ADD SAMPLESHEET POOL"
+
+
 
 ####
 # BEGIN PIPELINE:
 ####
+poolTypes = ['', '_POOLED']
 
 rule all:
 	input:
 		expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1','2']),
 		expand("Sam/{sample}_{species}_trim.sam", sample = sampleSheet.baseName, species = speciesList),
-		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
-		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
-		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes)
+		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved{pool}.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}, pool = poolTypes),
+		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{pool}_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}, pool = poolTypes),
+		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved{pool}_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, pool = poolTypes),
+		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved{pool}_{fragType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, pool = poolTypes)
 
 rule trim_adapter:
 	input:
@@ -183,12 +193,27 @@ rule removeDups:
 		samtools index {output.bam} {output.index}
 		"""
 
+rule mergeBams:
+	input:
+		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.bam", sample = sampleSheet.baseName, species = speciesList)
+	output:
+		bam = expand("Bam/{sample}_{species}_trim_q5_dupsRemoved_POOLED.bam", sample = sampleSheet.baseName, species = speciesList),
+		idx = expand("Bam/{sample}_{species}_trim_q5_dupsRemoved_POOLED.bam.bai", sample = sampleSheet.baseName, species = speciesList)
+	params:
+		module = samtoolsVer
+	shell:
+		"""
+		module purge && module load {params.module}
+		samtools merge {output.bam} {input} &&
+		samtools index {output.bam} 
+		"""
+
 rule sortBam:
 	input:
-		'Bam/{sample}_{species}_trim_q5_dupsRemoved.bam'
+		'Bam/{sample}_{species}_trim_q5_dupsRemoved{pool}.bam'
 	output:
-		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam',
-		idx = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam.bai'
+		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved{pool}_sorted.bam',
+		idx = 'Bam/{sample}_{species}_trim_q5_dupsRemoved{pool}_sorted.bam.bai'
 	params:
 		module = samtoolsVer
 	threads: 4
@@ -254,12 +279,12 @@ rule splitFragments:
 
 rule makeFragmentBedGraphs:
 	input:
-		ref   = lambda wildcards : 'Bed/' + wildcards.sample + '_' + REFGENOME + '_trim_q5_dupsRemoved_' + wildcards.fragType + '.bed',
-		spike = lambda wildcards : 'Bam/' + wildcards.sample + '_' + SPIKEGENOME + '_trim_q5_dupsRemoved.bam' 
+		ref   = lambda wildcards : 'Bed/' + wildcards.sample + '_' + REFGENOME + '_trim_q5_dupsRemoved' + wildcards.pool + wildcards.fragType + '.bed',
+		spike = lambda wildcards : 'Bam/' + wildcards.sample + '_' + SPIKEGENOME + '_trim_q5_dupsRemoved' + wildcards.pool + '.bam' 
 	output:
-		unNorm    = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg'),
-		spikeNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_spikeNorm.bg'),
-		rpgcNorm  = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bg')
+		unNorm    = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{pool}{fragType}.bg'),
+		spikeNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{pool}{fragType}_spikeNorm.bg'),
+		rpgcNorm  = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{pool}{fragType}_rpgcNorm.bg')
 	params:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path,
@@ -326,9 +351,9 @@ rule callThresholdPeaks:
 
 rule callPeaks:
 	input:
-		'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bed'
+		'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved{pool}_{fragType}.bed'
 	output:
-		'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
+		'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved{pool}_{fragType}_peaks.narrowPeak'
 	params:
 		module = macsVer,
 		control = controlDNAPath,
