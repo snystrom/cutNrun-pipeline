@@ -1,6 +1,4 @@
-from stat import *
 import pandas as pd
-import subprocess
 import preProcessSampleConfig as pre
 
 ##############################
