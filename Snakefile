@@ -68,8 +68,8 @@ for frag, norm in zip(fragTypes, normTypeList):
 	sampleSheet[bed_colName] = expand('Bed/{sample}_{species}_trim_q5_dupsRemoved_{fragType}.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
 
 	# Threshold peakcalls:
-	thresh_colName = 'threshold_peaks_{frag}'.format(frag = frag)
-	sampleSheet[thresh_colName] = expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
+	thresh_colName = 'threshold_peaks_{frag}{norm}'.format(frag = frag, norm = norm)
+	sampleSheet[thresh_colName] = expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
 
 sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 
