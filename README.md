@@ -17,12 +17,12 @@ sample3	rep1	SLN02_3-Geno-Time-Assay-Condition-Rep1_TAATA_L001_R1_001.fastq.gz	S
 sample3	rep2	SLN02_3-Geno-Time-Assay-Condition-Rep2_TAATA_L001_R1_001.fastq.gz	SLN02_3-Geno-Time-Assay-Condition-Rep2_TAATA_L001_R2_001.fastq.gz
 ```
 
-Run `preProcessSampleConfig.py ss.tsv sample rep`
+1. Run `preProcessSampleConfig.py ss.tsv sample rep` to copy & rename raw fastq files to current directory.
+2. Edit Snakefile `basename_cols = ['sample', 'rep']` (use the same column names used in the call to `preProcessSampleConfig.py`
+3. Edit Snakefile `file_info_path` to point to your sample sheet (in this example `ss.tsv`)
+ - Configure additional parameters if needed
+4. Edit slurmConfig.json to configure default parameters if necessary (i.e. account to match lab group)
+5. Run `sh slurmSubmission.sh`
+6. you can monitor job progress in another terminal using `sacct -S now`
 
-
-### TODO:
- - add step that merges techincal replicate fastq files from config
- - find better solution to copying fastq files & merging them
- - use config file to pass `basename_cols`, etc. Read in preProcess & Snakefile
- - add rules to create POOLED data
 
