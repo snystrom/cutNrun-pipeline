@@ -45,7 +45,8 @@ indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
 fragTypes    = ['allFrags', '20to120', '150to700']
 normTypeList = ['', '_spikeNorm', '_rpgcNorm']
 
-sampleSheet, pool_sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
+sampleInfo, sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
+poolSampleSheet = sampleSheet.copy()
 
 sampleSheet['fastq_trim_r1'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1'])
 sampleSheet['fastq_trim_r2'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['2'])
@@ -103,11 +104,8 @@ rule all:
 
 rule combine_technical_reps:
 	input:
-		# in future separete sampleInfo (input) from sampleSheet (output)
-		#r1 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r1,
-		#r2 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r2
-		r1 = lambda wildcards : sampleSheet[sampleSheet.baseName == wildcards.sample].fastq_r1,
-		r2 = lambda wildcards : sampleSheet[sampleSheet.baseName == wildcards.sample].fastq_r2
+		r1 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r1,
+		r2 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r2
 	output:
 		r1 = 'Fastq/{sample}_R1.fastq.gz',
 		r2 = 'Fastq/{sample}_R2.fastq.gz'
