@@ -21,7 +21,7 @@ bbmapVer = str('bbmap/38.22')
 ##############################
 # Configure these:
 
-file_info_path = "ss.tsv" 
+file_info_path = "sampleInfo.tsv" 
 basename_columns = ['sample','rep']
 pool_basename_columns = ['sample']
 
@@ -100,6 +100,22 @@ rule all:
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList)
+
+rule combine_technical_reps:
+	input:
+		# in future separete sampleInfo (input) from sampleSheet (output)
+		#r1 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r1,
+		#r2 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r2
+		r1 = lambda wildcards : sampleSheet[sampleSheet.baseName == wildcards.sample].fastq_r1,
+		r2 = lambda wildcards : sampleSheet[sampleSheet.baseName == wildcards.sample].fastq_r2
+	output:
+		r1 = 'Fastq/{sample}_R1.fastq.gz',
+		r2 = 'Fastq/{sample}_R2.fastq.gz'
+	shell:
+		"""
+		cat {input.r1} > {output.r1} &&
+		cat {input.r2} > {output.r2}
+		"""
 
 rule trim_adapter:
 	input:
