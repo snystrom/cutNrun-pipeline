@@ -24,7 +24,7 @@
 	"fastqScreen" :
 	{
 		"time"	: "1:00:00",
-		"threads" : "8",
+		"threads" : "4",
 		"mem" : "8G"
 	},
 
