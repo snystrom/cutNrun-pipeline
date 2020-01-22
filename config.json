@@ -11,14 +11,14 @@
 			"fasta" : "",
 			"chrSize" : "/proj/mckaylab/genomeFiles/dm3/dm3.chrom.sizes",
 			"controlDNAPath" : "/proj/mckaylab/genomeFiles/dm3/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed",
-			"genomeSize" : "121400000"
+			"genomeSize" : 121400000
 		},
 		"dm6" : { 
 			"bowtie" : "/proj/mckaylab/genomeFiles/dm6/Bowtie2Index/genome",
 			"fasta" : "/proj/mckaylab/genomeFiles/dm6/dm6.fa",
-			"chromSize" : "/proj/mckaylab/genomeFiles/dm6/dm6_chromSizes.txt",
+			"chrSize" : "/proj/mckaylab/genomeFiles/dm6/dm6_chromSizes.txt",
 			"controlDNAPath" : "/proj/mckaylab/genomeFiles/dm6/ControlGenomicDNA/ControlGenomicDNA_trim_q5_dupsRemoved.bed",
-			"genomeSize" : "137547960"
+			"genomeSize" : 137547960
 		},
 		"ecoli" : { 
 			"bowtie" : "/proj/mckaylab/genomeFiles/Ecoli_K12_DH10B_ENSEMBL/Bowtie2Index/genome",
@@ -48,7 +48,7 @@
 		"multiqcVer" : "multiqc/1.7",
 		"deeptoolsVer" : "deeptools/2.4.1",
 		"pythonVer" : "python/3.5.1",
-		"screenPath" : "/proj/mckaylab/genomeFiles/fastq_screen_v0.11.1/fastq_screen",
-		"screenConf" : "/proj/mckaylab/genomeFiles/fastq_screen.conf"
+		"fqscreenPath" : "/proj/mckaylab/genomeFiles/fastq_screen_v0.11.1/fastq_screen",
+		"fqscreenConf" : "/proj/mckaylab/genomeFiles/fastq_screen.conf"
 	}
 }

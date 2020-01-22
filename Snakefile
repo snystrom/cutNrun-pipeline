@@ -1,52 +1,35 @@
 import pandas as pd
 import preProcessSampleConfig as pre
 
-##############################
-# Module Versions:
+configfile: 'config.json'
 
-bowtie2Ver = str('bowtie2/2.2.8') 
-samtoolsVer = str('samtools/1.3.1') 
-bedtoolsVer = str('bedtools/2.25.0') 
-picardVer = str('2.2.4') 
-picardPath = str('/nas02/apps/picard-' + picardVer + '/picard-tools-' + picardVer + '/picard.jar') 
-deeptoolsVer = str('deeptools/2.4.1')
-macsVer = str('macs/2016-02-15')
-ucscVer = str('ucsctools/320')
-rVer = str('r/3.3.1')
-fastqcVer = 'fastqc/0.11.8'
-multiqcVer = 'multiqc/1.7'
+file_info_path = config['sampleInfo']
+basename_columns = config['baseNameColumns']
+pool_basename_columns = config['poolBaseNameColumns']
 
-python3Ver = str('python/3.5.1')
+REFGENOME = config['refGenome']
+SPIKEGENOME = config['spikeGenome']
+REFGENOMEPATH = config['genome'][REFGENOME]['bowtie']
+SPIKEGENOMEPATH = config['genome'][SPIKEGENOME]['bowtie']
+controlDNAPath  = config['genome'][REFGENOME]['controlDNAPath']
+chromSize_Path  = config['genome'][REFGENOME]['chrSize']
 
-bbmapVer = str('bbmap/38.71')
-		
-fqscreenPath = "/proj/mckaylab/genomeFiles/fastq_screen_v0.11.1/fastq_screen"
-fqscreenConf = "/proj/mckaylab/genomeFiles/fastq_screen.conf"
+genomeSize = config['genome'][REFGENOME]['genomeSize']
+readLen = config['readLen']
 
-##############################
-# Configure these:
-
-file_info_path = "sampleInfo.tsv" 
-basename_columns = ['sample','rep']
-pool_basename_columns = ['sample']
+modules = config['module']
+#########
+# Validation 
 
 if os.path.exists(file_info_path) == False:
-	print('Error: {name} does not exist. Be sure to set `file_info_path` in Snakefile.'.format(name = file_info_path))
+	print('Error: {name} does not exist. Be sure to set `sampleInfo` in config.json.'.format(name = file_info_path))
 
-REFGENOME   = 'dm3'
-SPIKEGENOME = 'sacCer3'
-
-# https://metagenomic-methods-for-microbial-ecologists.readthedocs.io/en/latest/day-1/
-REFGENOMEPATH   = '/proj/mckaylab/genomeFiles/{ref}/RefGenome/{ref}'.format(ref = REFGENOME)
-SPIKEGENOMEPATH = '/proj/seq/data/{spike}_UCSC/Sequence/Bowtie2Index/genome'.format(spike = SPIKEGENOME)
-controlDNAPath  = '/proj/mckaylab/genomeFiles/{ref}/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed'.format(ref = REFGENOME)
-chromSize_Path  = '/proj/mckaylab/genomeFiles/{ref}/{ref}.chrom.sizes'.format(ref = REFGENOME)
-
-genomeSize = '121400000'
-readLen = '75'
+#########
+# Generating sampleSheet outputs
 
 speciesList  = [REFGENOME, SPIKEGENOME]
 indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
+
 fragTypes    = ['allFrags', '20to120', '150to700']
 normTypeList = ['', '_spikeNorm', '_rpgcNorm']
 
@@ -58,11 +41,6 @@ sampleSheet['fastq_trim_r2'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sam
 sampleSheet['bam']           = expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, ftype = {"bam"})
 
 for frag, norm in zip(fragTypes, normTypeList):
-	# Add column per bedgraph
-	#bg_colName = 'bedgraph_{frag}{norm}'.format(frag = frag, norm = norm)
-	#sampleSheet[bg_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.bg", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag, normType = norm) 
-
-
 	# Add column per peak call list
 	peak_colName = 'peak_{frag}'.format(frag = frag)
 	sampleSheet[peak_colName] = expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
@@ -138,7 +116,7 @@ rule fastQC:
 	output:
 		'FastQC/{sample}_R1_fastqc.html'
 	params:
-		module = fastqcVer
+		module = config['module']['fastqcVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -157,7 +135,7 @@ rule trim_adapter:
 		adapterStats = 'Logs/{sample}_adapterStats',
 		trimStats = 'Logs/{sample}_trimStats'
 	params:
-		module  = bbmapVer
+		module  = config['module']['bbmapVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -171,7 +149,7 @@ rule fastQC_trim:
 	output:
 		'FastQC/{sample}_R1_trim_fastqc.html'
 	params:
-		module = fastqcVer
+		module = config['module']['fastqcVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -186,8 +164,8 @@ rule fastqScreen:
 		txt = 'FQscreen/{sample}_R1_trim_screen.txt',
 		html = 'FQscreen/{sample}_R1_trim_screen.html'
 	params:
-		fqscreenPath = fqscreenPath,
-		fqscreenConf = fqscreenConf
+		fqscreenPath = config['module']['fqscreenPath'],
+		fqscreenConf = config['module']['fqscreenConf']
 	threads: 4
 	shell:
 		"""
@@ -204,7 +182,7 @@ rule align:
 	threads: 8
 	params:
 		refgenome = lambda wildcards: indexDict[wildcards.species],
-		module = bowtie2Ver
+		module = config['module']['bowtie2Ver']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -217,7 +195,7 @@ rule convertToBam:
 	output:
 		'Bam/{sample}_{species}_trim.bam'
 	params:
-		module = samtoolsVer
+		module = config['module']['samtoolsVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -230,7 +208,7 @@ rule qFilter:
 	output:
 		temp('Bam/{sample}_{species}_trim_q5.bam')
 	params:
-		module = samtoolsVer
+		module = modules['samtoolsVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -245,8 +223,8 @@ rule markDups:
 		markedDups = temp('Bam/{sample}_{species}_trim_q5_dupsMarked.bam'),
 		PCRdups = "PCRdups/{sample}_{species}_trim_PCR_duplicates"
 	params:
-		module = str('picard/' + picardVer),
-		picardPath = picardPath
+		module = modules['picardVer'],
+		picardPath = modules['picardPath']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -261,7 +239,7 @@ rule removeDups:
 		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved.bam',
 		index = 'Bam/{sample}_{species}_trim_q5_dupsRemoved.bam.bai'
 	params:
-		module = samtoolsVer
+		module = modules['samtoolsVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -276,7 +254,7 @@ rule sortBam:
 		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam',
 		idx = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam.bai'
 	params:
-		module = samtoolsVer
+		module = modules['samtoolsVer']
 	threads: 4
 	shell:
 		"""
@@ -304,7 +282,7 @@ rule nameSortBam:
 	output:
 		temp('Bam/{sample}_{species}_trim_q5_dupsRemoved_nameSorted.bam')
 	params:
-		module = samtoolsVer
+		module = modules['samtoolsVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -317,7 +295,7 @@ rule convertBamToBed:
 	output:
 		'Bed/{sample}_{species}_trim_q5_dupsRemoved.bed'
 	params:
-		module = bedtoolsVer
+		module = modules['bedtoolsVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -350,7 +328,7 @@ rule makeFragmentBedGraphs:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path,
 		sampleName = '{sample}',
-		module = bedtoolsVer,
+		module = modules['bedtoolsVer'],
 		readLen = readLen
 	shell:
 		"""
@@ -373,7 +351,7 @@ rule convertToBigWig:
 	output:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}.bw'
 	params:
-		module = ucscVer,
+		module = modules['ucscVer'],
 		chromSize_Path = chromSize_Path
 	shell:
 		"""
@@ -388,7 +366,7 @@ rule zNormBigWig:
 		zNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
 		zStats = 'Logs/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.zNorm'
 	params:
-		module = rVer
+		module = modules['rVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -401,7 +379,7 @@ rule callThresholdPeaks:
 	output:
 		'Threshold_PeakCalls/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed'
 	params:
-		module = rVer
+		module = modules['rVer']
 	shell:
 		"""
 		module load {params.module}
@@ -414,7 +392,7 @@ rule callPeaks:
 	output:
 		'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
 	params:
-		module = macsVer,
+		module = modules['macsVer'],
 		control = controlDNAPath,
 		prefix = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}'
 	shell:
@@ -430,7 +408,7 @@ rule qcReport:
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName)
 	output:
 		"multiqc_report.html"
-	params: moduleVer = multiqcVer
+	params: moduleVer = modules['multiqcVer']
 	shell:
 		"""
 		module purge && module load {params.moduleVer}
@@ -444,11 +422,11 @@ rule makeFragmentSizePlots_inPeaks:
 	output:
 		'Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png'
 	params:
-		module = rVer
+		module = modules['rVer']
 	shell:
 		"""
 		module purge && module load {params.module}
-		Rscript --vanilla scripts/makeFragmentSizePlots.R {input.bed} {input.peaks} {output}
+		Rscript --vanilla scripts/makeFragsizePlot.R {input.bed} {input.peaks} {output}
 		"""
 
 #rule makeFragmentSizePlots:
@@ -457,7 +435,7 @@ rule makeFragmentSizePlots_inPeaks:
 #	output:
 #		'Plots/FragDist/{sample}_{REFGENOME}_trim_q5_allFrags_cumulativeDistPlot.png'
 #	params:
-#		module = rVer,
+#		module = modules['rVer'],
 #		srcDirectory = srcDirectory
 #	shell:
 #		"""
