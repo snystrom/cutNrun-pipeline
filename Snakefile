@@ -383,7 +383,7 @@ rule callThresholdPeaks:
 	shell:
 		"""
 		module load {params.module}
-		Rscript --vanilla callThresholdPeaks.R {input} {output}
+		Rscript --vanilla scripts/callThresholdPeaks.R {input} {output}
 		"""
 	
 rule callPeaks:
