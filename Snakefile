@@ -87,6 +87,10 @@ for fragNorm in fragNormCombn:
 	bw_colName = 'bigwig_{fragNorm}'.format(fragNorm = fragNorm)
 	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}.bw", sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm) 
 
+	# Add column per zNorm bigwig
+	bw_colName = 'zNorm_bigwig_{fragNorm}'.format(fragNorm = fragNorm)
+	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}_zNorm.bw", sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm) 
+
 	# Threshold peakcalls:
 	thresh_colName = 'threshold_peaks_{fragNorm}'.format(fragNorm = fragNorm)
 	sampleSheet[thresh_colName] = expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm)
