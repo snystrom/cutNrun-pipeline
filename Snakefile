@@ -109,7 +109,8 @@ rule all:
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
 		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
-		expand('FQscreen/{sample}_R1_trim_screen.html', sample = sampleSheet.baseName)
+		expand('FQscreen/{sample}_R1_trim_screen.html', sample = sampleSheet.baseName),
+		"multiqc_report.html"
 
 rule combine_technical_reps:
 	input:
@@ -417,17 +418,19 @@ rule callPeaks:
 		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123 --extsize 125
 		"""
 
-#rule qcReport:
-#	input:
-#		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = ['bam', 'bai'])
-#	output:
-#		"multiqc_report.html"
-#	params: moduleVer = python3Ver
-#	shell:
-#		"""
-#		module purge && module load {params.moduleVer}
-#		multiqc . -f -x *.out -x *.err 
-#		"""
+rule qcReport:
+	input:
+		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = ['bam', 'bam.bai']),
+		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
+		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName)
+	output:
+		"multiqc_report.html"
+	params: moduleVer = multiqcVer
+	shell:
+		"""
+		module purge && module load {params.moduleVer}
+		multiqc . -f -x *.out -x *.err
+		"""
 
 
 #rule makeFragmentSizePlots:
