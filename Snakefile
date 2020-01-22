@@ -18,7 +18,10 @@ multiqcVer = 'multiqc/1.7'
 
 python3Ver = str('python/3.5.1')
 
-bbmapVer = str('bbmap/38.22')
+bbmapVer = str('bbmap/38.71')
+		
+fqscreenPath = "/proj/mckaylab/genomeFiles/fastq_screen_v0.11.1/fastq_screen"
+fqscreenConf = "/proj/mckaylab/genomeFiles/fastq_screen.conf"
 
 ##############################
 # Configure these:
@@ -104,7 +107,9 @@ rule all:
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
-		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName)
+		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
+		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
+		expand('FQscreen/{sample}_R1_trim_screen.html', sample = sampleSheet.baseName)
 
 rule combine_technical_reps:
 	input:
@@ -164,6 +169,20 @@ rule fastQC_trim:
 		module purge && module load {params.module}
 
 		fastqc -o ./FastQC/ -f fastq {input}
+		"""
+
+rule fastqScreen:
+	input:
+		'Fastq/{sample}_R1_trim.fastq.gz'
+	output:
+		txt = 'FQscreen/{sample}_R1_trim_screen.txt',
+		html = 'FQscreen/{sample}_R1_trim_screen.html'
+	params:
+		fqscreenPath = fqscreenPath,
+		fqscreenConf = fqscreenConf
+	shell:
+		"""
+		{params.fqscreenPath} --force --aligner bowtie2 -conf {params.fqscreenConf} {input} --outdir ./FQscreen/
 		"""
 
 rule align:
