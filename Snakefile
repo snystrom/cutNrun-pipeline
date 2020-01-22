@@ -111,7 +111,9 @@ rule all:
 		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
 		expand('FQscreen/{sample}_R1_trim_screen.html', sample = sampleSheet.baseName),
 		"multiqc_report.html",
-		expand('Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png', sample = sampleSheet.baseName, REFGENOME = REFGENOME)
+		expand('Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png', sample = sampleSheet.baseName, REFGENOME = REFGENOME),
+		expand('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw', sample = sampleSheet.baseName, REFGENOME = REFGENOME, fragType = fragTypes)
+		
 
 rule combine_technical_reps:
 	input:
@@ -375,20 +377,19 @@ rule convertToBigWig:
 		wigToBigWig {input} {params.chromSize_Path} {output}
 		"""
 
-#rule zNormBigWig:
-#	input:
-#		'BigWig/{sample}_dm_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bw'
-#	output:
-#		zNorm = 'BigWig/{sample}_dm_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
-#		zStats = 'Logs/{sample}_dm_trim_q5_dupsRemoved_{fragType}.zNorm'
-#	params:
-#		module = rVer,
-#		srcDirectory = srcDirectory
-#	shell:
-#		"""
-#		module purge && module load {params.module}
-#		Rscript --vanilla {params.srcDirectory}/zNorm.r {input} {output.zNorm} > {output.zStats}
-#		"""
+rule zNormBigWig:
+	input:
+		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bw'
+	output:
+		zNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
+		zStats = 'Logs/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.zNorm'
+	params:
+		module = rVer
+	shell:
+		"""
+		module purge && module load {params.module}
+		Rscript --vanilla scripts/zNorm.r {input} {output.zNorm} > {output.zStats}
+		"""
 
 rule callThresholdPeaks:
 	input:
@@ -403,7 +404,6 @@ rule callThresholdPeaks:
 		Rscript --vanilla callThresholdPeaks.R {input} {output}
 		"""
 	
-
 rule callPeaks:
 	input:
 		'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bed'
@@ -432,7 +432,6 @@ rule qcReport:
 		module purge && module load {params.moduleVer}
 		multiqc . -f -x *.out -x *.err
 		"""
-
 
 rule makeFragmentSizePlots_inPeaks:
 	input:
