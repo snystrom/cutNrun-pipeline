@@ -180,9 +180,10 @@ rule fastqScreen:
 	params:
 		fqscreenPath = fqscreenPath,
 		fqscreenConf = fqscreenConf
+	threads: 8
 	shell:
 		"""
-		{params.fqscreenPath} --force --aligner bowtie2 -conf {params.fqscreenConf} {input} --outdir ./FQscreen/
+		{params.fqscreenPath} --threads {threads} --force --aligner bowtie2 -conf {params.fqscreenConf} {input} --outdir ./FQscreen/
 		"""
 
 rule align:
