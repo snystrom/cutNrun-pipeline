@@ -13,6 +13,8 @@ deeptoolsVer = str('deeptools/2.4.1')
 macsVer = str('macs/2016-02-15')
 ucscVer = str('ucsctools/320')
 rVer = str('r/3.3.1')
+fastqcVer = 'fastqc/0.11.8'
+multiqcVer = 'multiqc/1.7'
 
 python3Ver = str('python/3.5.1')
 
@@ -100,7 +102,9 @@ rule all:
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList)
+		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
+		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
+		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName)
 
 rule combine_technical_reps:
 	input:
@@ -113,6 +117,20 @@ rule combine_technical_reps:
 		"""
 		cat {input.r1} > {output.r1} &&
 		cat {input.r2} > {output.r2}
+		"""
+
+rule fastQC:
+	input:
+		'Fastq/{sample}_R1.fastq.gz',
+	output:
+		'FastQC/{sample}_R1_fastqc.html'
+	params:
+		module = fastqcVer
+	shell:
+		"""
+		module purge && module load {params.module}
+
+		fastqc -o ./FastQC/ -f fastq {input}
 		"""
 
 rule trim_adapter:
@@ -133,6 +151,20 @@ rule trim_adapter:
 		bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11 stats={log.adapterStats} > {log.trimStats}
 		"""
 		#bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11
+
+rule fastQC_trim:
+	input:
+		'Fastq/{sample}_R1_trim.fastq.gz',
+	output:
+		'FastQC/{sample}_R1_trim_fastqc.html'
+	params:
+		module = fastqcVer
+	shell:
+		"""
+		module purge && module load {params.module}
+
+		fastqc -o ./FastQC/ -f fastq {input}
+		"""
 
 rule align:
 	input:
