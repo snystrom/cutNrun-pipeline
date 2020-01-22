@@ -416,7 +416,7 @@ rule callPeaks:
 	shell:
 		"""
 		module purge && module load {params.module}
-		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123 --extsize 125
+		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123
 		"""
 
 rule qcReport:
