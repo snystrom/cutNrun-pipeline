@@ -110,7 +110,8 @@ rule all:
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
 		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
 		expand('FQscreen/{sample}_R1_trim_screen.html', sample = sampleSheet.baseName),
-		"multiqc_report.html"
+		"multiqc_report.html",
+		expand('Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png', sample = sampleSheet.baseName, REFGENOME = REFGENOME)
 
 rule combine_technical_reps:
 	input:
@@ -433,17 +434,30 @@ rule qcReport:
 		"""
 
 
+rule makeFragmentSizePlots_inPeaks:
+	input:
+		bed = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags.bed',
+		peaks = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags_peaks.narrowPeak'
+	output:
+		'Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png'
+	params:
+		module = rVer
+	shell:
+		"""
+		module purge && module load {params.module}
+		Rscript --vanilla scripts/makeFragmentSizePlots.R {input.bed} {input.peaks} {output}
+		"""
+
 #rule makeFragmentSizePlots:
 #	input:
-#		bed = 'Bed/{sample}_dm_trim_q5_dupsRemoved_{fragType}.bed',
-#		peaks = 'Peaks/{sample}_dm_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
+#		bed = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags.bed'
 #	output:
-#		'Plots/{sample}_dm_trim_q5_{fragType}_cumulativeDistPlot.png'
+#		'Plots/FragDist/{sample}_{REFGENOME}_trim_q5_allFrags_cumulativeDistPlot.png'
 #	params:
 #		module = rVer,
 #		srcDirectory = srcDirectory
 #	shell:
 #		"""
 #		module purge && module load {params.module}
-#		Rscript --vanilla {params.srcDirectory}/makeFragmentSizePlots.R {input.bed} {input.peaks} Plots/
+#		Rscript --vanilla scripts/plotFragsizeDist.R {input.bed}
 #		"""
