@@ -1,0 +1,54 @@
+{
+	"sampleInfo" : "sampleInfo.tsv",
+	"baseNameColumns" : ["sample", "rep"],
+	"poolBaseNameColumns" : ["sample"],
+	"refGenome" : "dm3",
+	"spikeGenome" : "sacCer3",
+	"readLen" : 75,
+	"genome" : {
+		"dm3" : { 
+			"bowtie" : "/proj/mckaylab/genomeFiles/dm3/RefGenome/dm3",
+			"fasta" : "",
+			"chrSize" : "/proj/mckaylab/genomeFiles/dm3/dm3.chrom.sizes",
+			"controlDNAPath" : "/proj/mckaylab/genomeFiles/dm3/ControlGenomicDNA/ControlGenomicDNA_q5_sorted_dupsRemoved_noYUHet.bed",
+			"genomeSize" : "121400000"
+		},
+		"dm6" : { 
+			"bowtie" : "/proj/mckaylab/genomeFiles/dm6/Bowtie2Index/genome",
+			"fasta" : "/proj/mckaylab/genomeFiles/dm6/dm6.fa",
+			"chromSize" : "/proj/mckaylab/genomeFiles/dm6/dm6_chromSizes.txt",
+			"controlDNAPath" : "/proj/mckaylab/genomeFiles/dm6/ControlGenomicDNA/ControlGenomicDNA_trim_q5_dupsRemoved.bed",
+			"genomeSize" : "137547960"
+		},
+		"ecoli" : { 
+			"bowtie" : "/proj/mckaylab/genomeFiles/Ecoli_K12_DH10B_ENSEMBL/Bowtie2Index/genome",
+			"fasta" : "/proj/mckaylab/genomeFiles/Ecoli_K12_DH10B_ENSEMBL/ecoli.fa"
+		},
+		"sacCer3" : { 
+			"bowtie" : "/proj/mckaylab/genomeFiles/sacCer3/Bowtie2Index/genome",
+			"fasta" : "/proj/mckaylab/genomeFiles/sacCer3/sacCer3.fa"
+		},
+		"droYak2" : {
+			"bowtie" : "/proj/mckaylab/genomeFiles/droYak2/RefGenome/droYak2",
+			"fasta" : "/proj/mckaylab/genomeFiles/droYak2/droYak2.fa"
+		}
+	},
+	"module" : {
+		"bbmapVer" : "bbmap/38.71",
+		"bowtie2Ver" : "bowtie2/2.3.4.1",
+		"samtoolsVer" : "samtools/1.9",
+		"picardVerNum" : "2.2.4",
+		"picardVer" : "picard/2.2.4",
+		"picardPath" : "/nas/longleaf/apps/picard/2.2.4/picard-tools-2.2.4/picard.jar",
+		"bedtoolsVer" : "bedtools/2.26",
+		"ucscVer" : "ucsctools/320",
+		"macsVer" : "macs/2.1.2",
+		"rVer" : "r/3.3.1",
+		"fastqcVer" : "fastqc/0.11.7",
+		"multiqcVer" : "multiqc/1.7",
+		"deeptoolsVer" : "deeptools/2.4.1",
+		"pythonVer" : "python/3.5.1",
+		"screenPath" : "/proj/mckaylab/genomeFiles/fastq_screen_v0.11.1/fastq_screen",
+		"screenConf" : "/proj/mckaylab/genomeFiles/fastq_screen.conf"
+	}
+}

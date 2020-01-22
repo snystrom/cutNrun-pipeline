@@ -13,15 +13,20 @@ deeptoolsVer = str('deeptools/2.4.1')
 macsVer = str('macs/2016-02-15')
 ucscVer = str('ucsctools/320')
 rVer = str('r/3.3.1')
+fastqcVer = 'fastqc/0.11.8'
+multiqcVer = 'multiqc/1.7'
 
 python3Ver = str('python/3.5.1')
 
-bbmapVer = str('bbmap/38.22')
+bbmapVer = str('bbmap/38.71')
+		
+fqscreenPath = "/proj/mckaylab/genomeFiles/fastq_screen_v0.11.1/fastq_screen"
+fqscreenConf = "/proj/mckaylab/genomeFiles/fastq_screen.conf"
 
 ##############################
 # Configure these:
 
-file_info_path = "ss.tsv" 
+file_info_path = "sampleInfo.tsv" 
 basename_columns = ['sample','rep']
 pool_basename_columns = ['sample']
 
@@ -45,7 +50,8 @@ indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
 fragTypes    = ['allFrags', '20to120', '150to700']
 normTypeList = ['', '_spikeNorm', '_rpgcNorm']
 
-sampleSheet, pool_sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
+sampleInfo, sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-")
+poolSampleSheet = sampleSheet.copy()
 
 sampleSheet['fastq_trim_r1'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1'])
 sampleSheet['fastq_trim_r2'] = expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['2'])
@@ -81,6 +87,10 @@ for fragNorm in fragNormCombn:
 	bw_colName = 'bigwig_{fragNorm}'.format(fragNorm = fragNorm)
 	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}.bw", sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm) 
 
+	# Add column per zNorm bigwig
+	bw_colName = 'zNorm_bigwig_{fragNorm}'.format(fragNorm = fragNorm)
+	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}_zNorm.bw", sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm) 
+
 	# Threshold peakcalls:
 	thresh_colName = 'threshold_peaks_{fragNorm}'.format(fragNorm = fragNorm)
 	sampleSheet[thresh_colName] = expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm)
@@ -99,7 +109,42 @@ rule all:
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList)
+		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
+		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
+		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
+		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
+		expand('FQscreen/{sample}_R1_trim_screen.html', sample = sampleSheet.baseName),
+		"multiqc_report.html",
+		expand('Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png', sample = sampleSheet.baseName, REFGENOME = REFGENOME),
+		expand('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw', sample = sampleSheet.baseName, REFGENOME = REFGENOME, fragType = fragTypes)
+		
+
+rule combine_technical_reps:
+	input:
+		r1 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r1,
+		r2 = lambda wildcards : sampleInfo[sampleInfo.baseName == wildcards.sample].fastq_r2
+	output:
+		r1 = 'Fastq/{sample}_R1.fastq.gz',
+		r2 = 'Fastq/{sample}_R2.fastq.gz'
+	shell:
+		"""
+		cat {input.r1} > {output.r1} &&
+		cat {input.r2} > {output.r2}
+		"""
+
+rule fastQC:
+	input:
+		'Fastq/{sample}_R1.fastq.gz',
+	output:
+		'FastQC/{sample}_R1_fastqc.html'
+	params:
+		module = fastqcVer
+	shell:
+		"""
+		module purge && module load {params.module}
+
+		fastqc -o ./FastQC/ -f fastq {input}
+		"""
 
 rule trim_adapter:
 	input:
@@ -119,6 +164,35 @@ rule trim_adapter:
 		bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11 stats={log.adapterStats} > {log.trimStats}
 		"""
 		#bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11
+
+rule fastQC_trim:
+	input:
+		'Fastq/{sample}_R1_trim.fastq.gz',
+	output:
+		'FastQC/{sample}_R1_trim_fastqc.html'
+	params:
+		module = fastqcVer
+	shell:
+		"""
+		module purge && module load {params.module}
+
+		fastqc -o ./FastQC/ -f fastq {input}
+		"""
+
+rule fastqScreen:
+	input:
+		'Fastq/{sample}_R1_trim.fastq.gz'
+	output:
+		txt = 'FQscreen/{sample}_R1_trim_screen.txt',
+		html = 'FQscreen/{sample}_R1_trim_screen.html'
+	params:
+		fqscreenPath = fqscreenPath,
+		fqscreenConf = fqscreenConf
+	threads: 4
+	shell:
+		"""
+		{params.fqscreenPath} --threads {threads} --force --aligner bowtie2 -conf {params.fqscreenConf} {input} --outdir ./FQscreen/
+		"""
 
 rule align:
 	input:
@@ -307,20 +381,19 @@ rule convertToBigWig:
 		wigToBigWig {input} {params.chromSize_Path} {output}
 		"""
 
-#rule zNormBigWig:
-#	input:
-#		'BigWig/{sample}_dm_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bw'
-#	output:
-#		zNorm = 'BigWig/{sample}_dm_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
-#		zStats = 'Logs/{sample}_dm_trim_q5_dupsRemoved_{fragType}.zNorm'
-#	params:
-#		module = rVer,
-#		srcDirectory = srcDirectory
-#	shell:
-#		"""
-#		module purge && module load {params.module}
-#		Rscript --vanilla {params.srcDirectory}/zNorm.r {input} {output.zNorm} > {output.zStats}
-#		"""
+rule zNormBigWig:
+	input:
+		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bw'
+	output:
+		zNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
+		zStats = 'Logs/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.zNorm'
+	params:
+		module = rVer
+	shell:
+		"""
+		module purge && module load {params.module}
+		Rscript --vanilla scripts/zNorm.r {input} {output.zNorm} > {output.zStats}
+		"""
 
 rule callThresholdPeaks:
 	input:
@@ -335,7 +408,6 @@ rule callThresholdPeaks:
 		Rscript --vanilla callThresholdPeaks.R {input} {output}
 		"""
 	
-
 rule callPeaks:
 	input:
 		'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bed'
@@ -348,33 +420,47 @@ rule callPeaks:
 	shell:
 		"""
 		module purge && module load {params.module}
-		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123 --extsize 125
+		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123
 		"""
 
-#rule qcReport:
-#	input:
-#		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = ['bam', 'bai'])
-#	output:
-#		"multiqc_report.html"
-#	params: moduleVer = python3Ver
-#	shell:
-#		"""
-#		module purge && module load {params.moduleVer}
-#		multiqc . -f -x *.out -x *.err 
-#		"""
+rule qcReport:
+	input:
+		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = ['bam', 'bam.bai']),
+		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
+		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName)
+	output:
+		"multiqc_report.html"
+	params: moduleVer = multiqcVer
+	shell:
+		"""
+		module purge && module load {params.moduleVer}
+		multiqc . -f -x *.out -x *.err
+		"""
 
+rule makeFragmentSizePlots_inPeaks:
+	input:
+		bed = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags.bed',
+		peaks = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags_peaks.narrowPeak'
+	output:
+		'Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png'
+	params:
+		module = rVer
+	shell:
+		"""
+		module purge && module load {params.module}
+		Rscript --vanilla scripts/makeFragmentSizePlots.R {input.bed} {input.peaks} {output}
+		"""
 
 #rule makeFragmentSizePlots:
 #	input:
-#		bed = 'Bed/{sample}_dm_trim_q5_dupsRemoved_{fragType}.bed',
-#		peaks = 'Peaks/{sample}_dm_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
+#		bed = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags.bed'
 #	output:
-#		'Plots/{sample}_dm_trim_q5_{fragType}_cumulativeDistPlot.png'
+#		'Plots/FragDist/{sample}_{REFGENOME}_trim_q5_allFrags_cumulativeDistPlot.png'
 #	params:
 #		module = rVer,
 #		srcDirectory = srcDirectory
 #	shell:
 #		"""
 #		module purge && module load {params.module}
-#		Rscript --vanilla {params.srcDirectory}/makeFragmentSizePlots.R {input.bed} {input.peaks} Plots/
+#		Rscript --vanilla scripts/plotFragsizeDist.R {input.bed}
 #		"""
