@@ -1,9 +1,9 @@
 # CUT&RUN Pipeline
 ## Author: Spencer Nystrom, Chris Uyehara
-======
+
 
 ## Quick Start:
-======
+
 
 Clone pipeline 
 ```
@@ -36,7 +36,7 @@ Edit `slurmConfig.json` to configure default parameters if necessary.
 
 Deploy submission with `sh slurmSubmission.sh`
 
-======
+
 
 ## Description of Pipeline Steps
 
@@ -61,7 +61,6 @@ The rules found in the [Snakefile](Snakefile) for this pipeline are written gene
 12. Compute QC metrics for all samples using [FastQC][#fastqc], and [multiqc][#multiqc]
 
 ## Sample Info Requirements <a name="sampleInfo"></a>
-======
 
 The `sampleInfo` file's purpose is to describe each experiment in as much
 detail as desired. An arbitrary number of sample descriptive columns can be
@@ -89,7 +88,7 @@ tab-delimited). To tell the pipeline which delimiter is being used, set the
 the following: `"sampleInfoDelimiter" : ","",`.
 
 ## config.json Requirements <a name="config"></a>
-======
+
 
 `config.json` describes pipeline-specific variables in [json format](https://www.tutorialspoint.com/json/json_overview.htm). 
 
@@ -148,7 +147,6 @@ to its path and the path of its config file.
 
 
 ## Troubleshooting
-======
 Consider setting `--rerun-incomplete` in the Snakemake call in `slurmSubmission.sh` when initially implementing the pipeline on a new compute environment or testing new parameters.
 
 Set `-k` in the Snakemake call in `slurmSubmission.sh` if certian steps fail only for 1 sample as this will cause the entire run to fail even if all other samples are good quality. Often this happens when a sample has few reads resulting in the peak calling steps failing. Because these samples have few reads, jobs complete quickly and cause the run to end early for other good samples. 
