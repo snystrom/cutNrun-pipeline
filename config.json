@@ -1,5 +1,6 @@
 {
 	"sampleInfo" : "sampleInfo.tsv",
+	"sampleInfoDelimiter" : "\t",
 	"baseNameColumns" : ["sample", "rep"],
 	"poolBaseNameColumns" : ["sample"],
 	"refGenome" : "dm3",
