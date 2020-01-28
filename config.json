@@ -3,7 +3,7 @@
 	"sampleInfoDelimiter" : "\t",
 	"baseNameColumns" : ["sample", "rep"],
 	"poolBaseNameColumns" : ["sample"],
-	"refGenome" : "dm3",
+	"refGenome" : "dm6",
 	"spikeGenome" : "sacCer3",
 	"readLen" : 75,
 	"genome" : {

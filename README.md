@@ -1,13 +1,11 @@
 # CUT&RUN Pipeline
 ## Author: Spencer Nystrom, Chris Uyehara
 
-
 ## Quick Start:
 
-
-Clone pipeline 
+Clone pipeline (Current stable version: v1.6.32)
 ```
-git clone <repo_url> --branch <tag> --depth 1 && cd <repo_name> && rm -rf .git
+git clone https://github.com/snystrom/cutNrun-pipeline.git --branch v1.6.32 --depth 1 && cd cutNrun-pipeline/ && rm -rf .git
 ```
 
 Create `sampleInfo.tsv` ([see below](#sampleInfo)) with descriptive columns of data.
@@ -36,8 +34,6 @@ Edit `slurmConfig.json` to configure default parameters if necessary.
 
 Deploy submission with `sh slurmSubmission.sh`
 
-
-
 ## Description of Pipeline Steps
 
 This pipeline in implemented in [Snakemake](https://snakemake.readthedocs.io/en/stable/), a workflow manager for handling job dependencies and submissions to HPC clusters. Snakemake will automate the job submission process for each sample individually and will therefore often run some of these steps seemingly out of order. Below is described the general flow of information through the pipeline. In some instances many jobs are handled by snakemake to accomplish a single defined "step" below.
@@ -51,16 +47,16 @@ The rules found in the [Snakefile](Snakefile) for this pipeline are written gene
 3. Alignment with [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 4. Conversion to Bam format & removing reads with QUAL score < 5 ([samtools](http://www.htslib.org/))
 5. Mark and remove PCR Duplicates using [picard](https://broadinstitute.github.io/picard/)
-6. Sort Bam file & convert to bed format with [bedtools][#bedtools]
+6. Sort Bam file & convert to bed format with [bedtools][bedtools]
 7. Split small (20-120bp) and large (150-700bp) fragments into 2 bed files with [awk](https://www.geeksforgeeks.org/awk-command-unixlinux-examples/)
-8. Make coverage files (bigwig format) from allFragments, small Fragments, large Fragments with [bedtools][#bedtools]. Generates unnormalized, RPGC-normalized, and spike-in normalized files.
+8. Make coverage files (bigwig format) from allFragments, small Fragments, large Fragments with [bedtools][bedtools]. Generates unnormalized, RPGC-normalized, and spike-in normalized files.
 9. Z-score normalize bigwig files ([zNorm.R](scripts/zNorm.r))
 
 10. Call traditional peaks with [MACS2](https://github.com/taoliu/MACS) and call peaks with threshold peak-calling with [callThresholdPeaks.R](scripts/callThresholdPeaks.R)
 11. Make fragment-size distribution plots for each sample ([makeFragsizePlot.R](scripts/makeFragsizePlot.R))
-12. Compute QC metrics for all samples using [FastQC][#fastqc], and [multiqc][#multiqc]
+12. Compute QC metrics for all samples using [FastQC][fastqc], and [multiqc][multiqc]
 
-## Sample Info Requirements <a name="sampleInfo"></a>
+## <a name="sampleInfo"></a> Sample Info Requirements
 
 The `sampleInfo` file's purpose is to describe each experiment in as much
 detail as desired. An arbitrary number of sample descriptive columns can be
@@ -87,10 +83,11 @@ tab-delimited). To tell the pipeline which delimiter is being used, set the
 `sampleInfoDelimiter` flag in `config.json`. For example, to use csv format set
 the following: `"sampleInfoDelimiter" : ","",`.
 
-## config.json Requirements <a name="config"></a>
+
+## <a name="config"></a> config.json Requirements
 
 
-`config.json` describes pipeline-specific variables in [json format](https://www.tutorialspoint.com/json/json_overview.htm). 
+[config.json](config.json) describes pipeline-specific variables in [json format](https://www.tutorialspoint.com/json/json_overview.htm). 
 
 The config file is broken up into 3 sections:
 ### run config
@@ -114,7 +111,7 @@ checking to ensure this value is found in "genome" (see [#28][i28]).
 value. Used in normalizing coverage files. **Will update in future to allow
 sample-specific read-length adjustment.** (see [#25][i25]).
 
-### genome config <a name="configGenome"></a>
+### <a name="configGenome"></a> genome config 
 This section is a nested structure which points to the absolute path to the
 bowtie index, whole genome fasta file, UCSC-format chrom.sizes file, control
 file for peak calling, and a value to set the genome size.
