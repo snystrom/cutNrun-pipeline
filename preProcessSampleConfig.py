@@ -36,8 +36,8 @@ def addBaseName(df, cols, delim = "-", outputColName = "baseName"):
 #def addExt(df, ext, baseNameCol = 'basename'):
 #    # input sampleSheet, return extension of file
 
-def makeSampleSheets(path, idcols, delim, baseNameColumn = "baseName"):
-    df = pd.read_table(path, delimiter = "\t")
+def makeSampleSheets(path, idcols, delim, baseNameColumn = "baseName", fileDelimiter = "\t"):
+    df = pd.read_table(path, delimiter = fileDelimiter)
     df = addBaseName(df, idcols, delim)
     keep_cols = idcols.copy()
     keep_cols.append(baseNameColumn)
