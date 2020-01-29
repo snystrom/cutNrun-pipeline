@@ -3,9 +3,9 @@
 
 ## Quick Start:
 
-Clone pipeline (Current stable version: v1.6.32)
+Clone pipeline (Current stable version: v1.6.33)
 ```
-git clone https://github.com/snystrom/cutNrun-pipeline.git --branch v1.6.32 --depth 1 && cd cutNrun-pipeline/ && rm -rf .git
+git clone https://github.com/snystrom/cutNrun-pipeline.git --branch v1.6.33 --depth 1 && cd cutNrun-pipeline/ && rm -rf .git
 ```
 
 Create `sampleInfo.tsv` ([see below](#sampleInfo)) with descriptive columns of data.
