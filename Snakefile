@@ -116,7 +116,7 @@ rule fastQC:
 	output:
 		'FastQC/{sample}_R1_fastqc.html'
 	params:
-		module = config['module']['fastqcVer']
+		module = modules['fastqcVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -135,7 +135,7 @@ rule trim_adapter:
 		adapterStats = 'Logs/{sample}_adapterStats',
 		trimStats = 'Logs/{sample}_trimStats'
 	params:
-		module  = config['module']['bbmapVer']
+		module  = modules['bbmapVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -149,7 +149,7 @@ rule fastQC_trim:
 	output:
 		'FastQC/{sample}_R1_trim_fastqc.html'
 	params:
-		module = config['module']['fastqcVer']
+		module = modules['fastqcVer']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -164,8 +164,8 @@ rule fastqScreen:
 		txt = 'FQscreen/{sample}_R1_trim_screen.txt',
 		html = 'FQscreen/{sample}_R1_trim_screen.html'
 	params:
-		fqscreenPath = config['module']['fqscreenPath'],
-		fqscreenConf = config['module']['fqscreenConf']
+		fqscreenPath = modules['fqscreenPath'],
+		fqscreenConf = modules['fqscreenConf']
 	threads: 4
 	shell:
 		"""
@@ -182,7 +182,7 @@ rule align:
 	threads: 8
 	params:
 		refgenome = lambda wildcards: indexDict[wildcards.species],
-		module = config['module']['bowtie2Ver']
+		module = modules['bowtie2Ver']
 	shell:
 		"""
 		module purge && module load {params.module}
@@ -195,7 +195,7 @@ rule convertToBam:
 	output:
 		'Bam/{sample}_{species}_trim.bam'
 	params:
-		module = config['module']['samtoolsVer']
+		module = modules['samtoolsVer']
 	shell:
 		"""
 		module purge && module load {params.module}
