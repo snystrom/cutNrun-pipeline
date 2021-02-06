@@ -405,7 +405,10 @@ rule qcReport:
 	input:
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = ['bam', 'bam.bai']),
 		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
-		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName)
+		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
+		expand("AlignmentStats/{sample}_{species}_trim.tsv", sample = sampleSheet.baseName, species = speciesList),
+		expand("AlignmentStats/{sample}_{species}_trim_q5.tsv", sample = sampleSheet.baseName, species = speciesList),
+		expand("AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv", sample = sampleSheet.baseName, species = speciesList)
 	output:
 		"multiqc_report.html"
 	params: moduleVer = modules['multiqcVer']
@@ -428,6 +431,27 @@ rule makeFragmentSizePlots_inPeaks:
 		module purge && module load {params.module}
 		Rscript --vanilla scripts/makeFragsizePlot.R {input.bed} {input.peaks} {output}
 		"""
+
+rule alignmentStats:
+    	input:
+	    	trim = "Bam/{sample}_{species}_trim.bam",
+		trim_q5 = "Bam/{sample}_{species}_trim_q5.bam",
+		q5_dupsRemoved = "Bam/{sample}_{species}_trim_q5_dupsRemoved.bam"
+    	output:
+	    	trim = "AlignmentStats/{sample}_{species}_trim.tsv",
+		trim_q5 = "AlignmentStats/{sample}_{species}_trim_q5.tsv",
+		q5_dupsRemoved = "AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv"
+    	params:
+	    	module = modules['samtoolsVer']
+    	shell:
+    		"""
+		module purge && module load {params.module}
+		samtools flagstat {input.trim} > {output.trim} &&
+		samtools flagstat {input.trim_q5} > {output.trim_q5} &&
+		samtools flagstat {input.q5_dupsRemoved} > {output.q5_dupsRemoved}
+		"""
+	# TODO: use newer samtools and use json output
+	#samtools flagstat -O json {input.q5_dupsRemoved} > {output.q5_dupsRemoved}
 
 #rule makeFragmentSizePlots:
 #	input:
