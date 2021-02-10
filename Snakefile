@@ -206,7 +206,7 @@ rule qFilter:
 	input:
 		'Bam/{sample}_{species}_trim.bam'
 	output:
-		temp('Bam/{sample}_{species}_trim_q5.bam')
+		'Bam/{sample}_{species}_trim_q5.bam'
 	params:
 		module = modules['samtoolsVer']
 	shell:
@@ -219,8 +219,8 @@ rule markDups:
 	input:
 		'Bam/{sample}_{species}_trim_q5.bam'
 	output:
-		sorted = temp('Bam/{sample}_{species}_trim_q5_sorted.bam'),
-		markedDups = temp('Bam/{sample}_{species}_trim_q5_dupsMarked.bam'),
+		sorted = 'Bam/{sample}_{species}_trim_q5_sorted.bam',
+		markedDups = 'Bam/{sample}_{species}_trim_q5_dupsMarked.bam',
 		PCRdups = "PCRdups/{sample}_{species}_trim_PCR_duplicates"
 	params:
 		module = modules['picardVer'],
