@@ -37,7 +37,7 @@
 	"module" : {
 		"bbmapVer" : "bbmap/38.71",
 		"bowtie2Ver" : "bowtie2/2.3.4.1",
-		"samtoolsVer" : "samtools/1.9",
+		"samtoolsVer" : "samtools/1.10",
 		"picardVerNum" : "2.2.4",
 		"picardVer" : "picard/2.2.4",
 		"picardPath" : "/nas/longleaf/apps/picard/2.2.4/picard-tools-2.2.4/picard.jar",
