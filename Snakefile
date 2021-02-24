@@ -27,8 +27,10 @@ if os.path.exists(file_info_path) == False:
 #########
 # Generating sampleSheet outputs
 
-speciesList  = [REFGENOME, SPIKEGENOME]
-indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
+speciesList  = [REFGENOME] + SPIKEGENOME
+combinedGenome = '-'.join(speciesList)
+#TODO: remove
+#indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
 
 fragTypes    = ['allFrags', '20to120', '150to700']
 normTypeList = ['', '_spikeNorm', '_rpgcNorm']
@@ -83,7 +85,7 @@ sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 rule all:
 	input:
 		expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1','2']),
-		expand("Sam/{sample}_{species}_trim.sam", sample = sampleSheet.baseName, species = speciesList),
+		expand("Sam/{sample}_{species}_trim.sam", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
@@ -246,6 +248,26 @@ rule removeDups:
 		samtools view -@ 4 -bF 0x400 {input} > {output.bam} &&
 		samtools index {output.bam} {output.index}
 		"""
+rule splitSpecies:
+    	input:
+	    	bam = expand('Bam/{sample}_{all_species}_trim_q5_dupsRemoved.bam', sample = sampleSheet.baseName, all_species = combinedGenome),
+	    	index = expand('Bam/{sample}_{all_species}_trim_q5_dupsRemoved.bam.bai', sample = sampleSheet.baseName, all_species = combinedGenome)
+	output:
+		bam = expand('Bam/{sample}_{species}_trim_q5_dupsRemoved.bam', sample = sampleSheet.baseName, species = speciesList),
+		index = expand('Bam/{sample}_{species}_trim_q5_dupsRemoved.bam.bai', sample = sampleSheet.baseName, species = speciesList)
+	params:
+		#prefix = lambda wildcards : ["{}_".format(wildcards.species)]
+		prefix = ["{}_".format(species) for species in speciesList]
+	run:
+	    for prefix, output_bam in zip(params.prefix, output.bam):
+		    #print("prefix: {}, bam: {}".format(prefix, output_bam))
+		    shell("module purge && module load {params.module}", params.module)
+		    shell("sh scripts/get_bam_reads_prefix.sh {} {} {}".format(input, prefix, output_bam))
+		    shell("samtools index {bam} {index}", output_bam, output_bam + ".bai")
+		#TODO: IS SORT ORDER OF prefix and output preserved??? can I zip or do I need to do something more complex?
+		# - to test this, I included a print statement above
+		# - CONFIRMED: order is preserved based on speciesList order
+		#TODO: consider merging sortBam rule with this on
 
 rule sortBam:
 	input:
