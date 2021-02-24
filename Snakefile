@@ -10,7 +10,6 @@ pool_basename_columns = config['poolBaseNameColumns']
 REFGENOME = config['refGenome']
 SPIKEGENOME = config['spikeGenome']
 REFGENOMEPATH = config['genome'][REFGENOME]['bowtie']
-SPIKEGENOMEPATH = config['genome'][SPIKEGENOME]['bowtie']
 controlDNAPath  = config['genome'][REFGENOME]['controlDNAPath']
 chromSize_Path  = config['genome'][REFGENOME]['chrSize']
 
@@ -174,8 +173,42 @@ rule fastqScreen:
 		{params.fqscreenPath} --threads {threads} --force --aligner bowtie2 -conf {params.fqscreenConf} {input} --outdir ./FQscreen/
 		"""
 
+def get_genome_fastas(config, speciesList):
+	"""
+	Takes config info & list of species as input, returns dict where keys = species name, values = genome fasta paths
+	"""
+	get_fasta = lambda species : (species, config['genome'][species]['fasta'])
+	fastas = {genome:fasta for (genome, fasta) in [get_fasta(s) for s in speciesList]}
+	return(fastas)
+
+genome_fastas = get_genome_fastas(config, speciesList)
+
+rule bowtie2index:
+    	input:
+	    	genome_fastas.values(),
+	output:
+	    	"Bowtie2Index/" + combinedGenome +  ".fa",
+	    	expand("Bowtie2Index/{genome}.{num}.bt2", genome = combinedGenome, num = ["1", "2", "3", "4", "rev.1", "rev.2"])
+	params:
+		module = modules['bowtie2Ver'],
+		prefix = "Bowtie2Index/" + combinedGenome,
+	    	combined_fa = "Bowtie2Index/" + combinedGenome +  ".fa"
+	run:
+	    shell("module purge && module load {module}".format(params.module))
+	    init = True
+	    for genome, fasta in genome_fastas.items():
+		    if init:
+			    shell("sed -e 's/>/>{genome}_' {fasta} > {fa}".format(genome, fasta, params.combined_fa))
+			    init = False
+		    else:
+			    shell("sed -e 's/>/>{genome}_' {fasta} >> {fa}".format(genome, fasta, params.combined_fa))
+	    shell("bowtie2-build {fasta} {prefix}".format(params.combined_fa, params.prefix))
+
+
+
 rule align:
 	input:
+	    	expand("Bowtie2Index/{genome}.{num}.bt2", genome = combinedGenome, num = ["1", "2", "3", "4", "rev.1", "rev.2"]),
 		r1 = "Fastq/{sample}_R1_trim.fastq.gz",
 		r2 = "Fastq/{sample}_R2_trim.fastq.gz"
 	output:
@@ -183,7 +216,8 @@ rule align:
 		logInfo = "Logs/{sample}_{species}_bowtie2.txt"
 	threads: 8
 	params:
-		refgenome = lambda wildcards: indexDict[wildcards.species],
+		#refgenome = lambda wildcards: indexDict[wildcards.species],
+		refgenome = "Bowtie2Index/" + combinedGenome,
 		module = modules['bowtie2Ver']
 	shell:
 		"""

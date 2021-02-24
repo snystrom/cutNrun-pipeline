@@ -14,6 +14,13 @@
 		"mem" : "8G"
 	},
 
+	"bowtie2index" :
+	{
+		"time"	: "2:00:00",
+		"threads" : "1",
+		"mem" : "8G"
+	},
+
 	"align" :
 	{
 		"time"	: "1:00:00",
