@@ -241,7 +241,7 @@ rule align:
 		module purge && module load {params.module}
 		bowtie2 --seed 123 -p {threads} -q --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700 -x {params.refgenome} -1 {input.r1} -2 {input.r2} -S {output.sam} 2> {output.logInfo}
 		"""
-
+# TODO: merge w/ align rule
 rule convertToBam:
 	input:
 		'Sam/{sample}_{species}_trim.sam'
@@ -284,13 +284,13 @@ rule markDups:
 		java -Xmx8g -jar {params.picardPath} SortSam INPUT= {input} OUTPUT= {output.sorted} SORT_ORDER=coordinate &&
 		java -Xmx8g -jar {params.picardPath} MarkDuplicates INPUT= {output.sorted} OUTPUT= {output.markedDups} METRICS_FILE= {output.PCRdups} REMOVE_DUPLICATES= false ASSUME_SORTED= true
 		"""
-
+# TODO: remove dups in markDups rule
 rule removeDups:
 	input:
-		'Bam/{sample}_{species}_trim_q5_dupsMarked.bam'
+		'Bam/{sample}_' + combinedGenome + '_trim_q5_dupsMarked.bam'
 	output:
-		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved.bam',
-		index = 'Bam/{sample}_{species}_trim_q5_dupsRemoved.bam.bai'
+		bam = 'Bam/{sample}_' +  combinedGenome + '_trim_q5_dupsRemoved.bam',
+		index = 'Bam/{sample}_' + combinedGenome + '_trim_q5_dupsRemoved.bam.bai'
 	params:
 		module = modules['samtoolsVer']
 	shell:
@@ -301,14 +301,14 @@ rule removeDups:
 		"""
 rule splitSpecies:
     	input:
-	    	bam = expand('Bam/{sample}_{all_species}_trim_q5_dupsRemoved.bam', sample = sampleSheet.baseName, all_species = combinedGenome),
-	    	index = expand('Bam/{sample}_{all_species}_trim_q5_dupsRemoved.bam.bai', sample = sampleSheet.baseName, all_species = combinedGenome)
+	    	bam = 'Bam/{sample}_' + combinedGenome + '_trim_q5_dupsRemoved.bam',
+	    	index = 'Bam/{sample}_' + combinedGenome + '_trim_q5_dupsRemoved.bam.bai',
 	output:
-		bam = expand('Bam/{sample}_{species}_trim_q5_dupsRemoved.bam', sample = sampleSheet.baseName, species = speciesList),
-		index = expand('Bam/{sample}_{species}_trim_q5_dupsRemoved.bam.bai', sample = sampleSheet.baseName, species = speciesList)
+		bam = expand('Bam/{{sample}}_{species}_trim_q5_dupsRemoved.bam', species = speciesList),
+		index = expand('Bam/{{sample}}_{species}_trim_q5_dupsRemoved.bam.bai', species = speciesList)
 	params:
 		#prefix = lambda wildcards : ["{}_".format(wildcards.species)]
-		prefix = ["{}_".format(species) for species in speciesList]
+		prefix = ["{}_".format(species) for species in speciesList],
 	run:
 	    for prefix, output_bam in zip(params.prefix, output.bam):
 		    #print("prefix: {}, bam: {}".format(prefix, output_bam))
