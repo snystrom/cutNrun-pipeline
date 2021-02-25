@@ -212,15 +212,14 @@ rule bowtie2index:
 		prefix = "Bowtie2Index/" + combinedGenome,
 	    	combined_fa = "Bowtie2Index/" + combinedGenome +  ".fa"
 	run:
-	    shell("module purge && module load {}".format(params.module))
 	    init = True
 	    for genome, fasta in genome_fastas.items():
 		    if init:
-			    shell("sed -e 's/>/>{genome}_' {fasta} > {fa}".format(genome, fasta, params.combined_fa))
+			    shell("sed -e 's/>/>{genome}_/' {fasta} > {fa}".format(genome = genome, fasta = fasta, fa = params.combined_fa))
 			    init = False
 		    else:
-			    shell("sed -e 's/>/>{genome}_' {fasta} >> {fa}".format(genome, fasta, params.combined_fa))
-	    shell("bowtie2-build {fasta} {prefix}".format(params.combined_fa, params.prefix))
+			    shell("sed -e 's/>/>{genome}_/' {fasta} >> {fa}".format(genome = genome, fasta = fasta, fa = params.combined_fa))
+	    shell("module purge && module load {module} && bowtie2-build {fasta} {prefix}".format(module = params.module, fasta = params.combined_fa, prefix = params.prefix))
 
 
 
