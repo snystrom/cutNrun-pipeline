@@ -21,14 +21,27 @@ modules = config['module']
 # Validation 
 
 if os.path.exists(file_info_path) == False:
-	print('Error: {name} does not exist. Be sure to set `sampleInfo` in config.json.'.format(name = file_info_path))
+	sys.exit('Error: {name} does not exist. Be sure to set `sampleInfo` in config.json.'.format(name = file_info_path))
 
-if len([REFGENOME]) > 1:
-	print('Error: refGenome can only be set to 1 value. Currently set to: {}. Double check `refGenome` in config.json.'.format(REFGENOME))
+if type(REFGENOME) is not str:
+	sys.exit('Error: refGenome must be a string. Currently set to: {}. Double check `refGenome` in config.json.'.format(REFGENOME))
+
+if type(SPIKEGENOME) is str:
+	# Convert spikegenome to list if not already
+	# allows users to pass single genomes as e.g. "spikeGenome" = "sacCer3" in config.json
+	# hopefully cutting down on errors for forgetting []
+	# Also ensures type safety for SPIKEGENOME
+	SPIKEGENOME = [SPIKEGENOME]
+
+if type(SPIKEGENOME) is not list:
+	sys.exit('Error: spikeGenome entry in config.json is invalid. Entry must be a string or an array of strings. Currently set to: {}'.format(SPIKEGENOME))
+
+#TODO: check that spikegenomes are inside config['genome'] & has all necessary files
+#TODO: check that refgenome is inside config['genome'] & has all necessary files
 
 #########
 # Generating sampleSheet outputs
-speciesList  = [REFGENOME] + SPIKEGENOME if type(SPIKEGENOME) is list and len(SPIKEGENOME) > 1 else [REFGENOME, SPIKEGENOME]
+speciesList  = [REFGENOME] + SPIKEGENOME
 #speciesList.append(SPIKEGENOME)
 
 combinedGenome = '-'.join(speciesList)
@@ -37,7 +50,7 @@ combinedGenome = '-'.join(speciesList)
 
 # TODO: fix _spikeNorm -> _{species}-spikeNorm
 fragTypes    = ['allFrags', '20to120', '150to700']
-normTypeList = ['', '_spikeNorm', '_rpgcNorm']
+normTypeList = ['', '_rpgcNorm'] + ["_{}-spikeNorm".format(species) for species in SPIKEGENOME]
 
 sampleInfo, sampleSheet = pre.makeSampleSheets(file_info_path, basename_columns, "-", fileDelimiter = config['sampleInfoDelimiter'])
 poolSampleSheet = sampleSheet.copy()
