@@ -23,14 +23,19 @@ modules = config['module']
 if os.path.exists(file_info_path) == False:
 	print('Error: {name} does not exist. Be sure to set `sampleInfo` in config.json.'.format(name = file_info_path))
 
+if len(REFGENOME) > 1:
+	print('Error: refGenome can only be set to 1 value. Currently set to: {}. Double check `refGenome` in config.json.'.format(REFGENOME))
+
 #########
 # Generating sampleSheet outputs
+speciesList  = [REFGENOME] + SPIKEGENOME if len(SPIKEGENOME) > 1 else [REFGENOME, SPIKEGENOME]
+#speciesList.append(SPIKEGENOME)
 
-speciesList  = [REFGENOME] + SPIKEGENOME
 combinedGenome = '-'.join(speciesList)
 #TODO: remove
 #indexDict    = {REFGENOME: REFGENOMEPATH, SPIKEGENOME: SPIKEGENOMEPATH}
 
+# TODO: fix _spikeNorm -> _{species}-spikeNorm
 fragTypes    = ['allFrags', '20to120', '150to700']
 normTypeList = ['', '_spikeNorm', '_rpgcNorm']
 
