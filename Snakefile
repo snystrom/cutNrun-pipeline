@@ -81,15 +81,15 @@ fragNormCombn = [''.join(frag + norm) for frag, norm in zip(fragTypeCombn, normT
 for fragNorm in fragNormCombn:
 
 	# Add column per bigwig
-	bw_colName = 'bigwig_{fragNorm}'.format(fragNorm = fragNorm)
+	bw_colName = 'bigwig_{fragNorm}'.format(fragNorm = fragNorm.replace("-", "_"))
 	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}.bw", sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm) 
 
 	# Add column per zNorm bigwig
-	bw_colName = 'zNorm_bigwig_{fragNorm}'.format(fragNorm = fragNorm)
+	bw_colName = 'zNorm_bigwig_{fragNorm}'.format(fragNorm = fragNorm.replace("-", "_"))
 	sampleSheet[bw_colName] = expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}_zNorm.bw", sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm) 
 
 	# Threshold peakcalls:
-	thresh_colName = 'threshold_peaks_{fragNorm}'.format(fragNorm = fragNorm)
+	thresh_colName = 'threshold_peaks_{fragNorm}'.format(fragNorm = fragNorm.replace("-", "_"))
 	sampleSheet[thresh_colName] = expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragNorm}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragNorm = fragNorm)
 
 sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
