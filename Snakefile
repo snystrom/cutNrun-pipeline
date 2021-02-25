@@ -212,7 +212,7 @@ rule bowtie2index:
 		prefix = "Bowtie2Index/" + combinedGenome,
 	    	combined_fa = "Bowtie2Index/" + combinedGenome +  ".fa"
 	run:
-	    shell("module purge && module load {module}".format(params.module))
+	    shell("module purge && module load {}".format(params.module))
 	    init = True
 	    for genome, fasta in genome_fastas.items():
 		    if init:
