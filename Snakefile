@@ -28,7 +28,7 @@ if len([REFGENOME]) > 1:
 
 #########
 # Generating sampleSheet outputs
-speciesList  = [REFGENOME] + SPIKEGENOME if len([SPIKEGENOME]) > 1 else [REFGENOME, SPIKEGENOME]
+speciesList  = [REFGENOME] + SPIKEGENOME if type(SPIKEGENOME) is list and len(SPIKEGENOME) > 1 else [REFGENOME, SPIKEGENOME]
 #speciesList.append(SPIKEGENOME)
 
 combinedGenome = '-'.join(speciesList)
