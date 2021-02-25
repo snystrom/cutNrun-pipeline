@@ -1,5 +1,5 @@
 # CUT&RUN Pipeline
-## Author: Spencer Nystrom, Chris Uyehara
+## Author: Spencer Nystrom, Chris Uyehara, Jeanne-Marie McPherson
 
 ## Quick Start:
 
