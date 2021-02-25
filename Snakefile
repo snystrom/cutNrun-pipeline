@@ -310,10 +310,10 @@ rule splitSpecies:
 
 rule sortBam:
 	input:
-		'Bam/{sample}_{species}_trim_q5_dupsRemoved.bam'
+		'Bam/{sample}_' + REFGENOME + '_trim_q5_dupsRemoved.bam'
 	output:
-		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam',
-		idx = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam.bai'
+		bam = 'Bam/{sample}_' + REFGENOME + '_trim_q5_dupsRemoved_sorted.bam',
+		idx = 'Bam/{sample}_' + REFGENOME + '_trim_q5_dupsRemoved_sorted.bam.bai'
 	params:
 		module = modules['samtoolsVer']
 	threads: 4
@@ -341,7 +341,7 @@ rule nameSortBam:
 	input:
 		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam'
 	output:
-		temp('Bam/{sample}_{species}_trim_q5_dupsRemoved_nameSorted.bam')
+		'Bam/{sample}_{species}_trim_q5_dupsRemoved_nameSorted.bam'
 	params:
 		module = modules['samtoolsVer']
 	shell:
