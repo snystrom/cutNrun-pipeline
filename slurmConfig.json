@@ -57,6 +57,12 @@
 		"threads" : "1"
 	},
 
+	"makeSpikeNormFragmentBedGraphs" :
+	{
+		"mem" : "16G",
+		"threads" : "1"
+	},
+
 	"qcReport" :
 	{
 		"mem" : "8G",
