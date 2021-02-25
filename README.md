@@ -3,9 +3,9 @@
 
 ## Quick Start:
 
-Clone pipeline (Current stable version: v1.6.4)
+Clone pipeline (Current stable version: v1.7.0)
 ```
-git clone https://github.com/snystrom/cutNrun-pipeline.git --branch v1.6.4 --depth 1 && cd cutNrun-pipeline/ && rm -rf .git
+git clone https://github.com/snystrom/cutNrun-pipeline.git --branch v1.7.0 --depth 1 && cd cutNrun-pipeline/ && rm -rf .git
 ```
 
 Create `sampleInfo.tsv` ([see below](#sampleInfo)) with descriptive columns of data.
@@ -17,7 +17,7 @@ mySample	Rep1	path/to/mySample_R1.fastq.gz	path/to/mySample_R2.fastq.gz
 
 edit `config.json` and set `baseNameColumns` to each column of `sampleInfo.tsv` which describes individual replicates (pipeline will automatically pool technical replicates).
 
-Set desired reference and spike-in genome in `config.json` ([see below](#config)).
+Set desired reference and spike-in genome in `config.json` ([see below](#config)). Set multiple spike-in genomes by passing as an array (e.g. `["sacCer3", "droYak2"]`).
 
 ```
 {
@@ -44,15 +44,20 @@ The rules found in the [Snakefile](Snakefile) for this pipeline are written gene
  - Autodetects technical replicates and pools reads for alignment
 2. adapter trimming using [bbduk](https://jgi.doe.gov/data-and-tools/bbtools/bb-tools-user-guide/bbduk-guide/)
  - soft-clips illumina adapters from reads
+3. Build combined reference + spike-in genome for alignment
+ - chromosomes for each species are prefixed as: "{species}_{chromosome}"
 3. Alignment with [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 4. Conversion to Bam format & removing reads with QUAL score < 5 ([samtools](http://www.htslib.org/))
 5. Mark and remove PCR Duplicates using [picard](https://broadinstitute.github.io/picard/)
+6. Split out reads from each species into individual bam files `scripts/get_bam_reads_prefix.sh`
+ - chromosomes for each species are renamed to their original forms
+ - Bam headers for each split file will still contain references to other spike-in chromosomes in form: "{species}_{chromosome}"
 6. Sort Bam file & convert to bed format with [bedtools][bedtools]
 7. Split small (20-120bp) and large (150-700bp) fragments into 2 bed files with [awk](https://www.geeksforgeeks.org/awk-command-unixlinux-examples/)
 8. Make coverage files (bigwig format) from allFragments, small Fragments, large Fragments with [bedtools][bedtools]. Generates unnormalized, RPGC-normalized, and spike-in normalized files.
+ - Spike-in normalization is performed separately for each spike-in genome. Files are listed as "{species}-spikeNorm.bw"
 9. Z-score normalize bigwig files ([zNorm.R](scripts/zNorm.r))
-
-10. Call traditional peaks with [MACS2](https://github.com/taoliu/MACS) and call peaks with threshold peak-calling with [callThresholdPeaks.R](scripts/callThresholdPeaks.R)
+10. Call traditional peaks with [MACS2](https://github.com/taoliu/MACS) and call peaks using threshold peak-calling with [callThresholdPeaks.R](scripts/callThresholdPeaks.R)
 11. Make fragment-size distribution plots for each sample ([makeFragsizePlot.R](scripts/makeFragsizePlot.R))
 12. Compute QC metrics for all samples using [FastQC][fastqc], and [multiqc][multiqc]
 
@@ -76,7 +81,7 @@ The `fastq_r1` and `fastq_r2` columns point to the location of one pair of
 fastq files for a sample described on that row. Technical replicates (i.e.
 deeper sequencing of the same library) should be added as their own row with the same column values except for the fastq file paths.
 
-**Note:** The current version of this pipeline (`v1.6.4` as of this writing) only works with the `.fastq.gz` file format. 
+**Note:** The current version of this pipeline (`v1.7.0` as of this writing) only works with the `.fastq.gz` file format. 
 
 The sampleInfo file can be delimited with any delimiter (default is
 tab-delimited). To tell the pipeline which delimiter is being used, set the
@@ -104,7 +109,7 @@ from the [genome](#configGenome) section. **NOTE:** there is currently no error
 checking to ensure this value is found in "genome" (see [#28][i28]).
 
 **spikeGenome** genome to be used as a spike-in normalization. Must be found in
-[genome](#configGenome). **NOTE:** no error checking currently (see
+[genome](#configGenome). To use multiple genomes, pass as an array (e.g. ["sacCer3", "droYak2"]) **NOTE:** no error checking currently (see
 [#28][i28]).
 
 **readLen** read length. If using variable read-lengths set to the smallest
@@ -131,8 +136,8 @@ For **Spike-in genomes** only the `bowtie` and `fasta` parameters are required.
 
 **Adding New Genomes**
 To quickly add a genome, copy an existing entry and paste it below another after the
-`},` line. Edit the settings from there. 
-
+`},` line. Edit the settings from there. To add a new spike-in genome, all that
+is needed is a `fasta` entry pointing to a whole genome fasta file where each entry is 1 chromosome.
 
 ### module config
 This setting describes the software versions for each software package used in the pipeline. UNC uses the Lmod package to manage packages, so these strings represent the `{package}` string when calling `module load {package}`. For adapting to a new computing environment, these values will need to be changed accordingly.
