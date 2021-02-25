@@ -23,12 +23,12 @@ modules = config['module']
 if os.path.exists(file_info_path) == False:
 	print('Error: {name} does not exist. Be sure to set `sampleInfo` in config.json.'.format(name = file_info_path))
 
-if len(REFGENOME) > 1:
+if len([REFGENOME]) > 1:
 	print('Error: refGenome can only be set to 1 value. Currently set to: {}. Double check `refGenome` in config.json.'.format(REFGENOME))
 
 #########
 # Generating sampleSheet outputs
-speciesList  = [REFGENOME] + SPIKEGENOME if len(SPIKEGENOME) > 1 else [REFGENOME, SPIKEGENOME]
+speciesList  = [REFGENOME] + SPIKEGENOME if len([SPIKEGENOME]) > 1 else [REFGENOME, SPIKEGENOME]
 #speciesList.append(SPIKEGENOME)
 
 combinedGenome = '-'.join(speciesList)
