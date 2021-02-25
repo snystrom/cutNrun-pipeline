@@ -395,8 +395,8 @@ rule makeFragmentBedGraphs:
 	input:
 		ref   = lambda wildcards : 'Bed/' + wildcards.sample + '_' + REFGENOME + '_trim_q5_dupsRemoved_' + wildcards.fragType + '.bed'
 	output:
-		unNorm    = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg'),
-		rpgcNorm  = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bg')
+		unNorm    = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bg',
+		rpgcNorm  = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm.bg'
 	params:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path,
@@ -420,7 +420,7 @@ rule makeSpikeNormFragmentBedGraphs:
 		#spike = lambda wildcards : 'Bam/' + wildcards.sample + '_' + SPIKEGENOME + '_trim_q5_dupsRemoved.bam'
 		spike = 'Bam/{sample}_{spikeGenome}_trim_q5_dupsRemoved.bam'
 	output:
-		spikeNorm = temp('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg')
+		spikeNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	params:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path,
