@@ -257,9 +257,9 @@ rule convertToBam:
 
 rule qFilter:
 	input:
-		'Bam/{sample}_{species}_trim.bam'
+		'Bam/{sample}_' + combinedGenome + '_trim.bam'
 	output:
-		'Bam/{sample}_{species}_trim_q5.bam'
+		'Bam/{sample}_' + combinedGenome + '_trim_q5.bam'
 	params:
 		module = modules['samtoolsVer']
 	shell:
