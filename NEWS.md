@@ -9,6 +9,7 @@
   * No longer uses temp() anywhere, intermediate files will be kept at all steps. These steps are candidates for merging in the future to eliminate the need to keep intermediates.
   * Computes genome alignment stats in: `Logs/{sample}*_genomeStats.tsv`
     * added local software dependency: [mlr](https://github.com/johnkerl/miller), set in `mlrPath` in config.json
+  * Pipeline now uses envmodules (no more manual calling module purge & load), and `--use-envmodules` is now set in `slurmSubmission.sh`. This enables easier adaptation of other module management systems like conda, docker & singularity.
   
   
 * 1.6.4

@@ -138,12 +138,10 @@ rule fastQC:
 		'Fastq/{sample}_R1.fastq.gz',
 	output:
 		'FastQC/{sample}_R1_fastqc.html'
-	params:
-		module = modules['fastqcVer']
+	envmodules:
+		modules['fastqcVer']
 	shell:
 		"""
-		module purge && module load {params.module}
-
 		fastqc -o ./FastQC/ -f fastq {input}
 		"""
 
@@ -157,11 +155,10 @@ rule trim_adapter:
 	log:
 		adapterStats = 'Logs/{sample}_adapterStats',
 		trimStats = 'Logs/{sample}_trimStats'
-	params:
-		module  = modules['bbmapVer']
+	envmodules:
+		modules['bbmapVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11 stats={log.adapterStats} > {log.trimStats}
 		"""
 		#bbduk.sh in1={input.r1} in2={input.r2} out1={output.r1} out2={output.r2} ktrim=r ref=adapters rcomp=t tpe=t tbo=t hdist=1 mink=11
@@ -171,12 +168,10 @@ rule fastQC_trim:
 		'Fastq/{sample}_R1_trim.fastq.gz',
 	output:
 		'FastQC/{sample}_R1_trim_fastqc.html'
-	params:
-		module = modules['fastqcVer']
+	envmodules:
+		modules['fastqcVer']
 	shell:
 		"""
-		module purge && module load {params.module}
-
 		fastqc -o ./FastQC/ -f fastq {input}
 		"""
 
@@ -212,9 +207,10 @@ rule bowtie2index:
 	    	"Bowtie2Index/" + combinedGenome +  ".fa",
 	    	expand("Bowtie2Index/{genome}.{num}.bt2", genome = combinedGenome, num = ["1", "2", "3", "4", "rev.1", "rev.2"])
 	params:
-		module = modules['bowtie2Ver'],
 		prefix = "Bowtie2Index/" + combinedGenome,
 	    	combined_fa = "Bowtie2Index/" + combinedGenome +  ".fa"
+	envmodules:
+		modules['bowtie2Ver']
 	run:
 	    init = True
 	    for genome, fasta in genome_fastas.items():
@@ -223,7 +219,7 @@ rule bowtie2index:
 			    init = False
 		    else:
 			    shell("sed -e 's/>/>{genome}_/' {fasta} >> {fa}".format(genome = genome, fasta = fasta, fa = params.combined_fa))
-	    shell("module purge && module load {module} && bowtie2-build {fasta} {prefix}".format(module = params.module, fasta = params.combined_fa, prefix = params.prefix))
+	    shell("bowtie2-build {fasta} {prefix}".format(fasta = params.combined_fa, prefix = params.prefix))
 
 
 
@@ -238,11 +234,11 @@ rule align:
 	threads: 8
 	params:
 		#refgenome = lambda wildcards: indexDict[wildcards.species],
-		refgenome = "Bowtie2Index/" + combinedGenome,
-		module = modules['bowtie2Ver']
+		refgenome = "Bowtie2Index/" + combinedGenome
+	envmodules:
+		modules['bowtie2Ver']
 	shell:
 		"""
-		module purge && module load {params.module}
 		bowtie2 --seed 123 -p {threads} -q --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700 -x {params.refgenome} -1 {input.r1} -2 {input.r2} -S {output.sam} 2> {output.logInfo}
 		"""
 # TODO: merge w/ align rule
@@ -251,11 +247,10 @@ rule convertToBam:
 		'Sam/{sample}_{species}_trim.sam'
 	output:
 		'Bam/{sample}_{species}_trim.bam'
-	params:
-		module = modules['samtoolsVer']
+	envmodules:
+		modules['samtoolsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		samtools view -b {input} > {output}
 		"""
 
@@ -264,11 +259,10 @@ rule qFilter:
 		'Bam/{sample}_' + combinedGenome + '_trim.bam'
 	output:
 		'Bam/{sample}_' + combinedGenome + '_trim_q5.bam'
-	params:
-		module = modules['samtoolsVer']
+	envmodules:
+		modules['samtoolsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		samtools view -@ 4 -bq 5 {input} > {output}
 		"""
 
@@ -280,11 +274,11 @@ rule markDups:
 		markedDups = 'Bam/{sample}_{species}_trim_q5_dupsMarked.bam',
 		PCRdups = "PCRdups/{sample}_{species}_trim_PCR_duplicates"
 	params:
-		module = modules['picardVer'],
 		picardPath = modules['picardPath']
+	envmodules:
+		modules['picardVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		java -Xmx8g -jar {params.picardPath} SortSam INPUT= {input} OUTPUT= {output.sorted} SORT_ORDER=coordinate &&
 		java -Xmx8g -jar {params.picardPath} MarkDuplicates INPUT= {output.sorted} OUTPUT= {output.markedDups} METRICS_FILE= {output.PCRdups} REMOVE_DUPLICATES= false ASSUME_SORTED= true
 		"""
@@ -295,11 +289,10 @@ rule removeDups:
 	output:
 		bam = 'Bam/{sample}_' +  combinedGenome + '_trim_q5_dupsRemoved.bam',
 		index = 'Bam/{sample}_' + combinedGenome + '_trim_q5_dupsRemoved.bam.bai'
-	params:
-		module = modules['samtoolsVer']
+	envmodules:
+		modules['samtoolsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		samtools view -@ 4 -bF 0x400 {input} > {output.bam} &&
 		samtools index {output.bam} {output.index}
 		"""
@@ -340,14 +333,14 @@ rule splitSpecies:
 		index = expand('Bam/{{sample}}_{species}_trim_q5_dupsRemoved.bam.bai', species = speciesList)
 	params:
 		#prefix = lambda wildcards : ["{}_".format(wildcards.species)]
-		prefix = ["{}_".format(species) for species in speciesList],
-		module = modules['samtoolsVer']
+		prefix = ["{}_".format(species) for species in speciesList]
+	envmodules:
+		modules['samtoolsVer']
 	run:
 	    for prefix, output_bam in zip(params.prefix, output.bam):
 		    #print("prefix: {}, bam: {}".format(prefix, output_bam))
-		    #shell("module purge && module load {} && ".format(params.module))
-		    shell("module purge && module load {} && sh scripts/get_bam_reads_prefix.sh {} {} {}".format(params.module, input.bam, prefix, output_bam))
-		    shell("module purge && module load {} && samtools index {bam} {index}".format(params.module, bam = output_bam, index = output_bam + ".bai"))
+		    shell("sh scripts/get_bam_reads_prefix.sh {} {} {}".format(input.bam, prefix, output_bam))
+		    shell("samtools index {bam} {index}".format(bam = output_bam, index = output_bam + ".bai"))
 		#TODO: IS SORT ORDER OF prefix and output preserved??? can I zip or do I need to do something more complex?
 		# - to test this, I included a print statement above
 		# - CONFIRMED: order is preserved based on speciesList order
@@ -359,39 +352,24 @@ rule sortBam:
 	output:
 		bam = 'Bam/{sample}_' + REFGENOME + '_trim_q5_dupsRemoved_sorted.bam',
 		idx = 'Bam/{sample}_' + REFGENOME + '_trim_q5_dupsRemoved_sorted.bam.bai'
-	params:
-		module = modules['samtoolsVer']
+	envmodules:
+		modules['samtoolsVer']
 	threads: 4
 	shell:
 		"""
-		module purge && module load {params.module}
 		samtools sort -@ {threads} -o {output.bam} {input}
 		samtools index {output.bam}	
 		"""
-
-#rule indexSortedBam:
-#	input:
-#		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam'
-#	output:
-#		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam.bai'
-#	params:
-#		module = samtoolsVer
-#	shell:
-#		"""
-#		module purge && module load {params.module}
-#		samtools index {input}	
-#		"""
 
 rule nameSortBam:
 	input:
 		'Bam/{sample}_{species}_trim_q5_dupsRemoved_sorted.bam'
 	output:
 		'Bam/{sample}_{species}_trim_q5_dupsRemoved_nameSorted.bam'
-	params:
-		module = modules['samtoolsVer']
+	envmodules:
+		modules['samtoolsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		samtools sort -n {input} -o {output}
 		"""
 
@@ -400,12 +378,11 @@ rule convertBamToBed:
 		bam = 'Bam/{sample}_{species}_trim_q5_dupsRemoved_nameSorted.bam',
 	output:
 		'Bed/{sample}_{species}_trim_q5_dupsRemoved.bed'
-	params:
-		module = modules['bedtoolsVer']
+	envmodules:
+		modules['bedtoolsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
-		bedtools bamtobed -bedpe -i {input.bam} | sort -k 1,1 -k 2,2n > {output}		
+		bedtools bamtobed -bedpe -i {input.bam} | sort -k 1,1 -k 2,2n > {output}
 		"""
 
 rule splitFragments:
@@ -432,12 +409,11 @@ rule makeFragmentBedGraphs:
 	params:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path,
-		module = modules['bedtoolsVer'],
 		readLen = readLen
+	envmodules:
+		modules['bedtoolsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
-
 		# Count reads in spike-in & inputs for normalization
 		readCount=$(wc -l {input.ref} | sed -e 's/^  *//' -e 's/  */,/g' | cut -d , -f 1)
 		rpgcScale=$(echo "scale=5; {params.genomeSize}/(${{readCount}} * {params.readLen})" | bc)
@@ -455,12 +431,11 @@ rule makeSpikeNormFragmentBedGraphs:
 		spikeNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	params:
 		genomeSize = genomeSize,
-		chromSize_Path = chromSize_Path,
-		module = modules['bedtoolsVer']
+		chromSize_Path = chromSize_Path
+	envmodules:
+		modules['bedtoolsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
-		
 		# Count reads in spike-in & inputs for normalization
 		spikeCount=$(samtools view -c {input.spike})
 		readCount=$(wc -l {input.ref} | sed -e 's/^  *//' -e 's/  */,/g' | cut -d , -f 1)
@@ -475,11 +450,11 @@ rule convertToBigWig:
 	output:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}.bw'
 	params:
-		module = modules['ucscVer'],
 		chromSize_Path = chromSize_Path
+	envmodules:
+		modules['ucscVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		wigToBigWig {input} {params.chromSize_Path} {output}
 		"""
 
@@ -489,11 +464,10 @@ rule zNormBigWig:
 	output:
 		zNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
 		zStats = 'Logs/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.zNorm'
-	params:
-		module = modules['rVer']
+	envmodules:
+		modules['rVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		Rscript --vanilla scripts/zNorm.r {input} {output.zNorm} > {output.zStats}
 		"""
 
@@ -502,11 +476,10 @@ rule callThresholdPeaks:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}.bw'
 	output:
 		'Threshold_PeakCalls/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed'
-	params:
-		module = modules['rVer']
+	envmodules:
+		modules['rVer']
 	shell:
 		"""
-		module load {params.module}
 		Rscript --vanilla scripts/callThresholdPeaks.R {input} {output}
 		"""
 	
@@ -516,12 +489,12 @@ rule callPeaks:
 	output:
 		'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
 	params:
-		module = modules['macsVer'],
 		control = controlDNAPath,
 		prefix = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}'
+	envmodules:
+		modules['macsVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123
 		"""
 
@@ -535,10 +508,9 @@ rule qcReport:
 		expand("AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv", sample = sampleSheet.baseName, species = speciesList)
 	output:
 		"multiqc_report.html"
-	params: moduleVer = modules['multiqcVer']
+	envmodules: modules['multiqcVer']
 	shell:
 		"""
-		module purge && module load {params.moduleVer}
 		multiqc . -f -x *.out -x *.err
 		"""
 
@@ -548,11 +520,10 @@ rule makeFragmentSizePlots_inPeaks:
 		peaks = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags_peaks.narrowPeak'
 	output:
 		'Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png'
-	params:
-		module = modules['rVer']
+	envmodules:
+		modules['rVer']
 	shell:
 		"""
-		module purge && module load {params.module}
 		Rscript --vanilla scripts/makeFragsizePlot.R {input.bed} {input.peaks} {output}
 		"""
 
@@ -565,11 +536,10 @@ rule alignmentStats:
 	    	trim = "AlignmentStats/{sample}_{species}_trim.tsv",
 		trim_q5 = "AlignmentStats/{sample}_{species}_trim_q5.tsv",
 		q5_dupsRemoved = "AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv"
-    	params:
-	    	module = modules['samtoolsVer']
+    	envmodules:
+	    	modules['samtoolsVer']
     	shell:
     		"""
-		module purge && module load {params.module}
 		samtools flagstat {input.trim} > {output.trim} &&
 		samtools flagstat {input.trim_q5} > {output.trim_q5} &&
 		samtools flagstat {input.q5_dupsRemoved} > {output.q5_dupsRemoved}
@@ -583,10 +553,10 @@ rule alignmentStats:
 #	output:
 #		'Plots/FragDist/{sample}_{REFGENOME}_trim_q5_allFrags_cumulativeDistPlot.png'
 #	params:
-#		module = modules['rVer'],
 #		srcDirectory = srcDirectory
+#	envmodules:
+#		modules['rVer']
 #	shell:
 #		"""
-#		module purge && module load {params.module}
 #		Rscript --vanilla scripts/plotFragsizeDist.R {input.bed}
 #		"""
