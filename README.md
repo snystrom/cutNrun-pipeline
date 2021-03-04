@@ -142,11 +142,16 @@ is needed is a `fasta` entry pointing to a whole genome fasta file where each en
 ### module config
 This setting describes the software versions for each software package used in the pipeline. UNC uses the Lmod package to manage packages, so these strings represent the `{package}` string when calling `module load {package}`. For adapting to a new computing environment, these values will need to be changed accordingly.
 
-**Of Note:** We run a pipeline step using [FastQ
+#### Local software dependencies
+We run a pipeline step using [FastQ
 Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/) to
-detect common contaminants. We use a locally installed version and thus point
-to its path and the path of its config file.
+detect common contaminants. We use a locally installed version and thus point to
+its path and the path of its config file in `fqscreenPath` and `fqscreenConf`,
+respectively.
 
+We use a local install of [mlr](https://github.com/johnkerl/miller) to parse
+certain log files. Download the appropriate binary from the github release page
+& set the location in `mlrPath` in `config.json`.
 
 ## Troubleshooting
 Consider setting `--rerun-incomplete` in the Snakemake call in `slurmSubmission.sh` when initially implementing the pipeline on a new compute environment or testing new parameters.

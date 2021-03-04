@@ -99,11 +99,15 @@ sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 # BEGIN PIPELINE:
 ####
 
+# TODO: remove
+localrules: all, collect_genome_align_stats
+
 rule all:
 	input:
 		expand("Fastq/{sample}_R{num}_trim.fastq.gz", sample = sampleSheet.baseName, num = ['1','2']),
 		expand("Sam/{sample}_{species}_trim.sam", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
+		expand("Logs/{sample}_{species}_trim_q5_dupsRemoved_genomeStats.tsv", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
@@ -114,7 +118,7 @@ rule all:
 		"multiqc_report.html",
 		expand('Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png', sample = sampleSheet.baseName, REFGENOME = REFGENOME),
 		expand('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw', sample = sampleSheet.baseName, REFGENOME = REFGENOME, fragType = fragTypes)
-		
+
 
 rule combine_technical_reps:
 	input:
@@ -299,6 +303,33 @@ rule removeDups:
 		samtools view -@ 4 -bF 0x400 {input} > {output.bam} &&
 		samtools index {output.bam} {output.index}
 		"""
+
+rule collect_genome_align_stats:
+	input:
+		bam = 'Bam/{sample}_' +  combinedGenome + '_trim_q5_dupsRemoved.bam',
+		index = 'Bam/{sample}_' + combinedGenome + '_trim_q5_dupsRemoved.bam.bai'
+	output:
+		stats = 'Logs/{sample}_' + combinedGenome + '_trim_q5_dupsRemoved_genomeStats.tsv'
+	params:
+		mlr = modules['mlrPath']
+	envmodules:
+		modules['samtoolsVer']
+	shell:
+		"""
+		samtools idxstats {input.bam} | \
+		 sed '$d' | \
+		 sed 's/_/,/;s/\t/,/g' | \
+		 {params.mlr} --csv --ofs tab --implicit-csv-header cat then group-by 1 then stats1 -g 1 -a sum -f 4 then rename 1,genome,4_sum,n then filter '$genome != "*"' | \
+		 sed -e 's|$|\t{input.bam}|' > {output.stats}
+		"""
+		# sed '$d' removes last line of idxstats, which is the * line. Since we use --nounal in bowtie2, no unmapped reads will propagate, so we ignore this line.
+		# NOTE: I use | instead of / in the last sed command since the input file uses a / in the name which '' expands into a sed command, causing an error
+		# it's typical to use @ in this context instead of /, but since
+		# I'm matching $, $@ is expanded by '' into ARGV, so can't use
+		# that either. I guess I could use "" since snakemake will eval
+		# first and no bash variable expansion will occurr, but I'll keep it this way in case this gets moved to a script somewhere.
+
+
 
 rule splitSpecies:
     	input:

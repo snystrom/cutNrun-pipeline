@@ -7,6 +7,9 @@
     * To support these changes, spike-in normalized bigwig files are now denoted: "{species}-spikeNorm.bw" instead of merely "spikeNorm.bw"
     * The output sampleSheet columns referencing spikeNorm files now also contain the spike-in genome name i.e. "bigwig_allFrags_{species}_spikeNorm" vs old "bigwig_allFrags_spikeNorm"
   * No longer uses temp() anywhere, intermediate files will be kept at all steps. These steps are candidates for merging in the future to eliminate the need to keep intermediates.
+  * Computes genome alignment stats in: `Logs/{sample}*_genomeStats.tsv`
+    * added local software dependency: [mlr](https://github.com/johnkerl/miller), set in `mlrPath` in config.json
+  
   
 * 1.6.4
   * Added computation of alignment stats

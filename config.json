@@ -51,5 +51,7 @@
 		"pythonVer" : "python/3.5.1",
 		"fqscreenPath" : "/proj/mckaylab/genomeFiles/fastq_screen_v0.11.1/fastq_screen",
 		"fqscreenConf" : "/proj/mckaylab/genomeFiles/fastq_screen.conf"
+		"fqscreenConf" : "/proj/mckaylab/genomeFiles/fastq_screen.conf",
+		"mlrPath" : "/proj/mckaylab/bin/mlr"
 	}
 }
