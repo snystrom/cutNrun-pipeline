@@ -117,7 +117,10 @@ rule all:
 		expand('FQscreen/{sample}_R1_trim_screen.html', sample = sampleSheet.baseName),
 		"multiqc_report.html",
 		expand('Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png', sample = sampleSheet.baseName, REFGENOME = REFGENOME),
-		expand('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw', sample = sampleSheet.baseName, REFGENOME = REFGENOME, fragType = fragTypes)
+		expand('BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw', sample = sampleSheet.baseName, REFGENOME = REFGENOME, fragType = fragTypes),
+		expand("AlignmentStats/{sample}_{species}_trim.tsv", sample = sampleSheet.baseName, species = combinedGenome),
+		expand("AlignmentStats/{sample}_{species}_trim_q5.tsv", sample = sampleSheet.baseName, species = combinedGenome),
+		expand("AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv", sample = sampleSheet.baseName, species = combinedGenome)
 
 
 rule combine_technical_reps:
@@ -502,9 +505,9 @@ rule qcReport:
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = ['bam', 'bam.bai']),
 		expand('FQscreen/{sample}_R1_trim_screen.txt', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
-		expand("AlignmentStats/{sample}_{species}_trim.tsv", sample = sampleSheet.baseName, species = speciesList),
-		expand("AlignmentStats/{sample}_{species}_trim_q5.tsv", sample = sampleSheet.baseName, species = speciesList),
-		expand("AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv", sample = sampleSheet.baseName, species = speciesList)
+		expand("AlignmentStats/{sample}_{species}_trim.tsv", sample = sampleSheet.baseName, species = combinedGenome),
+		expand("AlignmentStats/{sample}_{species}_trim_q5.tsv", sample = sampleSheet.baseName, species = combinedGenome),
+		expand("AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv", sample = sampleSheet.baseName, species = combinedGenome)
 	output:
 		"multiqc_report.html"
 	envmodules: modules['multiqcVer']
@@ -528,13 +531,13 @@ rule makeFragmentSizePlots_inPeaks:
 
 rule alignmentStats:
     	input:
-	    	trim = "Bam/{sample}_{species}_trim.bam",
-		trim_q5 = "Bam/{sample}_{species}_trim_q5.bam",
-		q5_dupsRemoved = "Bam/{sample}_{species}_trim_q5_dupsRemoved.bam"
+	    	trim = "Bam/{sample}_" + combinedGenome + "_trim.bam",
+		trim_q5 = "Bam/{sample}_" + combinedGenome + "_trim_q5.bam",
+		q5_dupsRemoved = "Bam/{sample}_" + combinedGenome + "_trim_q5_dupsRemoved.bam"
     	output:
-	    	trim = "AlignmentStats/{sample}_{species}_trim.tsv",
-		trim_q5 = "AlignmentStats/{sample}_{species}_trim_q5.tsv",
-		q5_dupsRemoved = "AlignmentStats/{sample}_{species}_trim_q5_dupsRemoved.tsv"
+	    	trim = "AlignmentStats/{sample}_" + combinedGenome + "_trim.tsv",
+		trim_q5 = "AlignmentStats/{sample}_" + combinedGenome + "_trim_q5.tsv",
+		q5_dupsRemoved = "AlignmentStats/{sample}_" + combinedGenome + "_trim_q5_dupsRemoved.tsv"
     	envmodules:
 	    	modules['samtoolsVer']
     	shell:
