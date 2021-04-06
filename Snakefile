@@ -207,10 +207,9 @@ rule bowtie2index:
 	    	"Bowtie2Index/" + combinedGenome +  ".fa",
 	    	expand("Bowtie2Index/{genome}.{num}.bt2", genome = combinedGenome, num = ["1", "2", "3", "4", "rev.1", "rev.2"])
 	params:
+		module = modules['bowtie2Ver'],
 		prefix = "Bowtie2Index/" + combinedGenome,
 	    	combined_fa = "Bowtie2Index/" + combinedGenome +  ".fa"
-	envmodules:
-		modules['bowtie2Ver']
 	run:
 	    init = True
 	    for genome, fasta in genome_fastas.items():
@@ -219,7 +218,7 @@ rule bowtie2index:
 			    init = False
 		    else:
 			    shell("sed -e 's/>/>{genome}_/' {fasta} >> {fa}".format(genome = genome, fasta = fasta, fa = params.combined_fa))
-	    shell("bowtie2-build {fasta} {prefix}".format(fasta = params.combined_fa, prefix = params.prefix))
+	    shell("module purge && module load {module} && bowtie2-build {fasta} {prefix}".format(module = params.module, fasta = params.combined_fa, prefix = params.prefix))
 
 
 
@@ -333,14 +332,14 @@ rule splitSpecies:
 		index = expand('Bam/{{sample}}_{species}_trim_q5_dupsRemoved.bam.bai', species = speciesList)
 	params:
 		#prefix = lambda wildcards : ["{}_".format(wildcards.species)]
-		prefix = ["{}_".format(species) for species in speciesList]
-	envmodules:
-		modules['samtoolsVer']
+		prefix = ["{}_".format(species) for species in speciesList],
+		module = modules['samtoolsVer']
 	run:
 	    for prefix, output_bam in zip(params.prefix, output.bam):
 		    #print("prefix: {}, bam: {}".format(prefix, output_bam))
-		    shell("sh scripts/get_bam_reads_prefix.sh {} {} {}".format(input.bam, prefix, output_bam))
-		    shell("samtools index {bam} {index}".format(bam = output_bam, index = output_bam + ".bai"))
+		    #shell("module purge && module load {} && ".format(params.module))
+		    shell("module purge && module load {} && sh scripts/get_bam_reads_prefix.sh {} {} {}".format(params.module, input.bam, prefix, output_bam))
+		    shell("module purge && module load {} && samtools index {bam} {index}".format(params.module, bam = output_bam, index = output_bam + ".bai"))
 		#TODO: IS SORT ORDER OF prefix and output preserved??? can I zip or do I need to do something more complex?
 		# - to test this, I included a print statement above
 		# - CONFIRMED: order is preserved based on speciesList order
