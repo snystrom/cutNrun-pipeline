@@ -164,3 +164,21 @@ Set `-k` in the Snakemake call in `slurmSubmission.sh` if certian steps fail onl
 [bedtools]: https://bedtools.readthedocs.io/en/latest/
 [fastqc]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 [multiqc]: https://multiqc.info/
+
+
+## Evaluating CUT&RUN Experimental Success
+
+The following is a non-exhaustive list of things to check after the pipeline run is finished. Suggestions involving exact numbers are more rules of thumb than precise cutoffs, so interpret your data as such.
+
+1. Alignment Stats -- \>80% of reads align
+3. FastqScreen does not identify any significant contaminating genomes
+4. Most reads are kept post filtering
+	- a significant fraction of reads filtered out can indicate poor library quality
+	- high % of duplicates indicates low diversity libary
+5. Determine fragment size distribution 
+        - Check `Plots/FragDistInPeaks/`, compare to Bioanalyzer/Tapestation trace for each library
+6. Determine fraction of reads in and out of peaks 
+  	- \>15% FrIP seen in previous CUT&RUN experiments
+	- ~3-5% typical for ChIP-seq (ENCODE guideline for ChIP is FrIP > 1%)
+7. Signal correlation between replicates (inside peaks)
+8. Profit	
