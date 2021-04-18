@@ -164,3 +164,16 @@ Set `-k` in the Snakemake call in `slurmSubmission.sh` if certian steps fail onl
 [bedtools]: https://bedtools.readthedocs.io/en/latest/
 [fastqc]: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 [multiqc]: https://multiqc.info/
+
+
+## Evaluating CUT&RUN Experimental Success
+
+1. Alignment Stats -- \>80% of reads align
+2. FastqScreen does not identify any significant contaminating genomes
+3. Most reads are kept post filtering
+	- a significant fraction of reads filtered out can indicate poor library quality
+4. Determine fragment size distribution 
+5. Determine fraction of reads in and out of peaks 
+	- \>15% FrIP seen in previous CUT&RUN experiments
+	- ~3-5% typical for ChIP-seq
+6. Profit	
