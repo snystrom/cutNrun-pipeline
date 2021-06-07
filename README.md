@@ -3,9 +3,9 @@
 
 ## Quick Start:
 
-Clone pipeline (Current stable version: v1.7.1)
+Clone pipeline (Current stable version: v1.7.2)
 ```
-git clone https://github.com/snystrom/cutNrun-pipeline.git --branch v1.7.1 --depth 1 && cd cutNrun-pipeline/ && rm -rf .git
+git clone https://github.com/snystrom/cutNrun-pipeline.git --branch v1.7.2 --depth 1 && cd cutNrun-pipeline/ && rm -rf .git
 ```
 
 Create `sampleInfo.tsv` ([see below](#sampleInfo)) with descriptive columns of data.
@@ -81,7 +81,7 @@ The `fastq_r1` and `fastq_r2` columns point to the location of one pair of
 fastq files for a sample described on that row. Technical replicates (i.e.
 deeper sequencing of the same library) should be added as their own row with the same column values except for the fastq file paths.
 
-**Note:** The current version of this pipeline (`v1.7.1` as of this writing) only works with the `.fastq.gz` file format. 
+**Note:** The current version of this pipeline (`v1.7.2` as of this writing) only works with the `.fastq.gz` file format. 
 
 The sampleInfo file can be delimited with any delimiter (default is
 tab-delimited). To tell the pipeline which delimiter is being used, set the
