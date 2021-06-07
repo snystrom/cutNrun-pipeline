@@ -440,10 +440,9 @@ rule makeSpikeNormFragmentBedGraphs:
 		"""
 		# Count reads in spike-in & inputs for normalization
 		spikeCount=$(samtools view -c {input.spike})
-		readCount=$(wc -l {input.ref} | sed -e 's/^  *//' -e 's/  */,/g' | cut -d , -f 1)
 		spikeScale=$(echo "scale=5; 10000/${{spikeCount}}/" | bc)
 
-		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} -scale ${{spikeCount}} > {output.spikeNorm}
+		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} -scale ${{spikeScale}} > {output.spikeNorm}
 		"""
 
 rule convertToBigWig:
