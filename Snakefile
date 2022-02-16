@@ -100,7 +100,7 @@ sampleSheet.to_csv('sampleSheet.tsv', sep = "\t", index = False)
 ####
 
 # TODO: remove
-localrules: all, collect_genome_align_stats, splitFragments, makeFragmentBedGraphs, makeSpikeNormFragmentBedGraphs, convertToBigWig, zNormBigWig, callThresholdPeaks
+localrules: all, collect_genome_align_stats
 
 rule all:
 	input:
@@ -394,6 +394,8 @@ rule splitFragments:
 		allFrags = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags.bed',
 		smallFrags = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_20to120.bed',
 		bigFrags = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_150to700.bed'
+	group:
+		"fragment"
 	shell:
 		"""
 		cut -f 1,2,6,7 {input} | awk -F '\t' '{{print $0, ($3-$2)}}' - > {output.allFrags}
@@ -412,6 +414,8 @@ rule makeFragmentBedGraphs:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path,
 		readLen = readLen
+	group:
+		"fragment"
 	envmodules:
 		modules['bedtoolsVer']
 	shell:
@@ -434,6 +438,8 @@ rule makeSpikeNormFragmentBedGraphs:
 	params:
 		genomeSize = genomeSize,
 		chromSize_Path = chromSize_Path
+	group:
+		"fragment"
 	envmodules:
 		modules['bedtoolsVer']
 	shell:
@@ -452,6 +458,8 @@ rule convertToBigWig:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}.bw'
 	params:
 		chromSize_Path = chromSize_Path
+	group:
+		"bigwig"
 	envmodules:
 		modules['ucscVer']
 	shell:
@@ -465,6 +473,8 @@ rule zNormBigWig:
 	output:
 		zNorm = 'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_rpgcNorm_zNorm.bw',
 		zStats = 'Logs/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.zNorm'
+	group:
+		"bigwig"
 	envmodules:
 		modules['rVer']
 	shell:
@@ -477,6 +487,8 @@ rule callThresholdPeaks:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}.bw'
 	output:
 		'Threshold_PeakCalls/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed'
+	group:
+		"bigwig"
 	envmodules:
 		modules['rVer']
 	shell:
