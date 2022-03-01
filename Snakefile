@@ -110,6 +110,7 @@ rule all:
 		expand("Logs/{sample}_{species}_trim_q5_dupsRemoved_genomeStats.tsv", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
+	    	expand("Peaks/{sample}_{REFGENOME}_{fragType}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
@@ -510,6 +511,20 @@ rule callPeaks:
 		"""
 		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123
 		"""
+
+rule callPeaks_SEACR:
+    	input:
+		"BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg"
+	output:
+	    	"Peaks/{sample}_{REFGENOME}_{fragType}_SEACR-peaks.bed"
+	params:
+	    	threshold = 0.01
+		stringency = "stringent"
+	shell:
+	    	"""
+		bash scripts/SEACR/SEACR_1.3.sh {input} {params.threshold} non {params.stringency} {output}
+		"""
+
 
 rule qcReport:
 	input:
