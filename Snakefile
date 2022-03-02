@@ -110,7 +110,7 @@ rule all:
 		expand("Logs/{sample}_{species}_trim_q5_dupsRemoved_genomeStats.tsv", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-	    	expand("Peaks/{sample}_{REFGENOME}_{fragType}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
+	    	expand("Peaks/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
@@ -513,16 +513,20 @@ rule callPeaks:
 		"""
 
 rule callPeaks_SEACR:
-    	input:
-		"BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg"
+	input:
+		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	output:
-	    	"Peaks/{sample}_{REFGENOME}_{fragType}_SEACR-peaks.bed"
+	    	'Peaks/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
 	params:
-	    	threshold = 0.01
+	    	threshold = 0.01,
 		stringency = "stringent"
+	log:
+	    	"Logs/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
+	envmodules:
+	    	modules["rVer"]
 	shell:
 	    	"""
-		bash scripts/SEACR/SEACR_1.3.sh {input} {params.threshold} non {params.stringency} {output}
+		bash scripts/SEACR/SEACR_1.3.sh {input} {params.threshold} non {params.stringency} {output} &>> {log}
 		"""
 
 
