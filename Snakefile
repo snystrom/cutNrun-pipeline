@@ -109,8 +109,8 @@ rule all:
 		expand("Bam/{sample}_{species}_trim_q5_dupsRemoved.{ftype}", sample = sampleSheet.baseName, species = speciesList, ftype = {"bam", "bam.bai"}),
 		expand("Logs/{sample}_{species}_trim_q5_dupsRemoved_genomeStats.tsv", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
-		expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-	    	expand("Peaks/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME),
+		expand("Peaks/MACS2/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
+	    	expand("Peaks/SEACR/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
@@ -501,10 +501,10 @@ rule callPeaks:
 	input:
 		'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}.bed'
 	output:
-		'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
+		'Peaks/MACS2/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak'
 	params:
 		control = controlDNAPath,
-		prefix = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}'
+		prefix = 'Peaks/MACS2/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}'
 	envmodules:
 		modules['macsVer']
 	shell:
@@ -516,7 +516,7 @@ rule callPeaks_SEACR:
 	input:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	output:
-	    	'Peaks/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
+	    	'Peaks/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
 	params:
 	    	threshold = 0.01,
 		stringency = "stringent"
