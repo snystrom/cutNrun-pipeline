@@ -522,9 +522,10 @@ rule callPeaks_SEACR:
 	input:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	output:
-	    	'Peaks/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
+	    	'Peaks/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.stringent.bed'
 	params:
 		threshold = 0.003 # top 0.3% of peaks; empirically determined; IgG preferable
+		prefix = 'Peaks/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks'
 	log:
 	    	"Logs/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
 	envmodules:
