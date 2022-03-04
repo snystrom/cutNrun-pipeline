@@ -526,7 +526,7 @@ rule callPeaks_SEACR:
 	params:
 		threshold = 0.003 # top 0.3% of peaks; empirically determined; IgG preferable
 	log:
-	    	f"Logs/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
+	    	"Logs/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
 	envmodules:
 	    	modules["rVer"]
 	shell:
