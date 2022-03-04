@@ -115,7 +115,7 @@ rule all:
 		expand("Logs/{sample}_{species}_trim_q5_dupsRemoved_genomeStats.tsv", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/MACS2/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-	    	expand("Peaks/SEACR/{params}/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME, params=seacr_params.instance_patterns),
+	    	expand("Peaks/SEACR/{sample:q}_{REFGENOME:q}_{fragType:q}_{spikeGenome:q}_SEACR-peaks.{params}.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME, params=seacr_params.instance_patterns),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
@@ -522,11 +522,11 @@ rule callPeaks_SEACR:
 	input:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	output:
-	    	f'Peaks/SEACR/{seacr_params.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
+	    	f'Peaks/SEACR/{{sample}}_{{REFGENOME}}_{{fragType}}_{{spikeGenome}}_SEACR-peaks.{seacr_params.wildcard_pattern}.bed'
 	params:
 		s_params = seacr_params.instance
 	log:
-	    	f"Logs/SEACR/{seacr_params.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
+	    	f"Logs/SEACR/{seacr_params.wildcard_pattern}/{{sample}}_{{REFGENOME}}_{{fragType}}_{{spikeGenome}}.log"
 	envmodules:
 	    	modules["rVer"]
 	shell:
