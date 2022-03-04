@@ -62,7 +62,7 @@ sampleSheet['bam']           = expand("Bam/{sample}_{species}_trim_q5_dupsRemove
 for frag, norm in zip(fragTypes, normTypeList):
 	# Add column per peak call list
 	peak_colName = 'peak_{frag}'.format(frag = frag)
-	sampleSheet[peak_colName] = expand("Peaks/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
+	sampleSheet[peak_colName] = expand("Peaks/MACS2/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
 	
 	bed_colName = 'bed_{frag}'.format(frag = frag)
 	sampleSheet[bed_colName] = expand('Bed/{sample}_{species}_trim_q5_dupsRemoved_{fragType}.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = frag)
@@ -549,7 +549,7 @@ rule qcReport:
 rule makeFragmentSizePlots_inPeaks:
 	input:
 		bed = 'Bed/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags.bed',
-		peaks = 'Peaks/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags_peaks.narrowPeak'
+		peaks = 'Peaks/MACS2/{sample}_{REFGENOME}_trim_q5_dupsRemoved_allFrags_peaks.narrowPeak'
 	output:
 		'Plots/FragDistInPeaks/{sample}_{REFGENOME}_trim_q5_allFrags_fragDistPlot.png'
 	envmodules:
