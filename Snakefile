@@ -1,5 +1,6 @@
 import pandas as pd
 import preProcessSampleConfig as pre
+from snakemake.utils import Paramspace
 
 configfile: 'config.json'
 
@@ -15,6 +16,7 @@ chromSize_Path  = config['genome'][REFGENOME]['chrSize']
 
 genomeSize = config['genome'][REFGENOME]['genomeSize']
 readLen = config['readLen']
+
 
 modules = config['module']
 #########
@@ -512,16 +514,18 @@ rule callPeaks:
 		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123
 		"""
 
+seacr_params = Paramspace(pd.DataFrame(data={'threshold': [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2], 'stringency': ["stringent", "relaxed"]}))
+
 rule callPeaks_SEACR:
 	input:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	output:
-	    	'Peaks/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
+	    	'Peaks/SEACR/{paramspace.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
 	params:
-	    	threshold = 0.01,
-		stringency = "stringent"
+	    	threshold = seacr_params.instance["threshold"],
+		stringency = seacr_params.instance["stringency"]
 	log:
-	    	"Logs/SEACR/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
+	    	"Logs/SEACR/{paramspace.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
 	envmodules:
 	    	modules["rVer"]
 	shell:
