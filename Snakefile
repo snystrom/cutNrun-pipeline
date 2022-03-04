@@ -21,7 +21,7 @@ readLen = config['readLen']
 
 modules = config['module']
 
-seacr_params = Paramspace(pd.DataFrame(list(ParameterGrid({'threshold': [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2], 'stringency': ["stringent", "relaxed"]}))))
+seacr_params = Paramspace(pd.DataFrame(list(ParameterGrid({'threshold': [0.001, 0.05, 0.01], 'stringency': ["stringent"]}))))
 #########
 # Validation 
 
