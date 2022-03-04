@@ -524,15 +524,14 @@ rule callPeaks_SEACR:
 	output:
 	    	'Peaks/SEACR/{paramspace.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
 	params:
-	    	threshold = seacr_params.instance["threshold"],
-		stringency = seacr_params.instance["stringency"]
+		s_params = seacr_params.insance
 	log:
 	    	"Logs/SEACR/{paramspace.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
 	envmodules:
 	    	modules["rVer"]
 	shell:
 	    	"""
-		bash scripts/SEACR/SEACR_1.3.sh {input} {params.threshold} non {params.stringency} {output} &>> {log}
+		bash scripts/SEACR/SEACR_1.3.sh {input} {params.s_params.threshold} non {params.s_params.stringency} {output} &>> {log}
 		"""
 
 
