@@ -115,7 +115,7 @@ rule all:
 		expand("Logs/{sample}_{species}_trim_q5_dupsRemoved_genomeStats.tsv", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/MACS2/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-	    	expand("Peaks/SEACR/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME),
+	    	expand("Peaks/SEACR/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.stringent.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
