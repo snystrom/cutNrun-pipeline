@@ -1,6 +1,7 @@
 import pandas as pd
 import preProcessSampleConfig as pre
 from snakemake.utils import Paramspace
+from sklearn.model_selection import ParameterGrid
 
 configfile: 'config.json'
 
@@ -514,7 +515,7 @@ rule callPeaks:
 		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123
 		"""
 
-seacr_params = Paramspace(pd.DataFrame(data={'threshold': [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2], 'stringency': ["stringent", "relaxed"]}))
+seacr_params = Paramspace(ParameterGrid({'threshold': [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2], 'stringency': ["stringent", "relaxed"]}))
 
 rule callPeaks_SEACR:
 	input:
