@@ -20,6 +20,8 @@ readLen = config['readLen']
 
 
 modules = config['module']
+
+seacr_params = Paramspace(pd.DataFrame(list(ParameterGrid({'threshold': [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2], 'stringency': ["stringent", "relaxed"]}))))
 #########
 # Validation 
 
@@ -113,7 +115,7 @@ rule all:
 		expand("Logs/{sample}_{species}_trim_q5_dupsRemoved_genomeStats.tsv", sample = sampleSheet.baseName, species = combinedGenome),
 		expand("BigWig/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}.{ftype}", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList, ftype = {"bw", "bg"}),
 		expand("Peaks/MACS2/{sample}_{species}_trim_q5_dupsRemoved_{fragType}_peaks.narrowPeak", sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes),
-	    	expand("Peaks/SEACR/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME),
+	    	expand("Peaks/SEACR/{params}/{sample}_{species}_{fragType}_{spikeGenome}_SEACR-peaks.bed", sample=sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, spikeGenome = SPIKEGENOME, params=seacr_params.instance_patterns),
 		expand('Threshold_PeakCalls/{sample}_{species}_trim_q5_dupsRemoved_{fragType}{normType}_thresholdPeaks.bed', sample = sampleSheet.baseName, species = REFGENOME, fragType = fragTypes, normType = normTypeList),
 		expand('FastQC/{sample}_R1_fastqc.html', sample = sampleSheet.baseName),
 		expand('FastQC/{sample}_R1_trim_fastqc.html', sample = sampleSheet.baseName),
@@ -515,7 +517,6 @@ rule callPeaks:
 		macs2 callpeak -f BEDPE -c {params.control} -n {params.prefix} -g 121400000 -t {input}  --nomodel --seed 123
 		"""
 
-seacr_params = Paramspace(ParameterGrid({'threshold': [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2], 'stringency': ["stringent", "relaxed"]}))
 
 rule callPeaks_SEACR:
 	input:
