@@ -522,11 +522,11 @@ rule callPeaks_SEACR:
 	input:
 		'BigWig/{sample}_{REFGENOME}_trim_q5_dupsRemoved_{fragType}_{spikeGenome}-spikeNorm.bg'
 	output:
-	    	'Peaks/SEACR/{paramspace.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
+	    	'Peaks/SEACR/{seacr_params.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}_SEACR-peaks.bed'
 	params:
-		s_params = seacr_params.insance
+		s_params = seacr_params.instance
 	log:
-	    	"Logs/SEACR/{paramspace.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
+	    	"Logs/SEACR/{seacr_params.wildcard_pattern}/{sample}_{REFGENOME}_{fragType}_{spikeGenome}.log"
 	envmodules:
 	    	modules["rVer"]
 	shell:
