@@ -531,7 +531,7 @@ rule callPeaks_SEACR:
 	    	modules["rVer"]
 	shell:
 	    	"""
-		bash scripts/SEACR/SEACR_1.3.sh {input} {params.s_params.threshold} non {params.s_params.stringency} {output} &>> {log}
+		bash scripts/SEACR/SEACR_1.3.sh {input} {wildcards.threshold} non {wildcards.stringency} {output} &>> {log}
 		"""
 
 
