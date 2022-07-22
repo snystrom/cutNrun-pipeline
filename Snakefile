@@ -440,7 +440,7 @@ rule makeSpikeNormFragmentBedGraphs:
 		"""
 		# Count reads in spike-in & inputs for normalization
 		spikeCount=$(samtools view -c {input.spike})
-		spikeScale=$(echo "scale=5; 10000/${{spikeCount}}/" | bc)
+		spikeScale=$(echo "scale=5; 10000/${{spikeCount}}" | bc)
 
 		bedtools genomecov -i {input.ref} -bga -g {params.chromSize_Path} -scale ${{spikeScale}} > {output.spikeNorm}
 		"""
